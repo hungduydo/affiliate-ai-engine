@@ -178,10 +178,7 @@ describe('ContentService', () => {
       });
 
       // Assert
-      const [findManyCall, countCall] = (
-        prisma.$transaction as jest.Mock
-      ).mock.calls[0][0];
-      expect(findManyCall).toHaveBeenCalledWith({
+      expect(prisma.content.findMany).toHaveBeenCalledWith({
         where: {
           productId: 'prod-123',
         },
@@ -203,9 +200,7 @@ describe('ContentService', () => {
       });
 
       // Assert
-      const [findManyCall] = (prisma.$transaction as jest.Mock).mock
-        .calls[0][0];
-      expect(findManyCall).toHaveBeenCalledWith({
+      expect(prisma.content.findMany).toHaveBeenCalledWith({
         where: {
           status: ContentStatus.GENERATED,
         },
@@ -214,6 +209,7 @@ describe('ContentService', () => {
         orderBy: { createdAt: 'desc' },
       });
     });
+
 
     it('should filter by platform', async () => {
       // Arrange
@@ -227,9 +223,7 @@ describe('ContentService', () => {
       });
 
       // Assert
-      const [findManyCall] = (prisma.$transaction as jest.Mock).mock
-        .calls[0][0];
-      expect(findManyCall).toHaveBeenCalledWith({
+      expect(prisma.content.findMany).toHaveBeenCalledWith({
         where: {
           platform: Platform.FACEBOOK,
         },
@@ -238,6 +232,7 @@ describe('ContentService', () => {
         orderBy: { createdAt: 'desc' },
       });
     });
+
 
     it('should calculate correct skip value for pagination', async () => {
       // Arrange
@@ -250,15 +245,14 @@ describe('ContentService', () => {
       });
 
       // Assert
-      const [findManyCall] = (prisma.$transaction as jest.Mock).mock
-        .calls[0][0];
-      expect(findManyCall).toHaveBeenCalledWith({
+      expect(prisma.content.findMany).toHaveBeenCalledWith({
         where: {},
         skip: 20, // (3-1) * 10
         take: 10,
         orderBy: { createdAt: 'desc' },
       });
     });
+
 
     it('should calculate totalPages correctly', async () => {
       // Arrange
@@ -494,9 +488,7 @@ describe('ContentService', () => {
       });
 
       // Assert
-      const [findManyCall] = (prisma.$transaction as jest.Mock).mock
-        .calls[0][0];
-      expect(findManyCall).toHaveBeenCalledWith({
+      expect(prisma.content.findMany).toHaveBeenCalledWith({
         where: {
           platform: 'WORDPRESS',
           status: 'GENERATED',
@@ -508,6 +500,7 @@ describe('ContentService', () => {
       });
     });
 
+
     it('should use default pagination values', async () => {
       // Arrange
       prisma.$transaction.mockResolvedValue([[], 0]);
@@ -516,15 +509,14 @@ describe('ContentService', () => {
       await service.getContent({});
 
       // Assert
-      const [findManyCall] = (prisma.$transaction as jest.Mock).mock
-        .calls[0][0];
-      expect(findManyCall).toHaveBeenCalledWith({
+      expect(prisma.content.findMany).toHaveBeenCalledWith({
         where: {},
         skip: 0,
         take: 10, // default pageSize
         orderBy: { createdAt: 'desc' },
       });
     });
+
   });
 
   describe('getContentById()', () => {

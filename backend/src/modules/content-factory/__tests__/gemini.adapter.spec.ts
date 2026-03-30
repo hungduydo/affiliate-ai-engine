@@ -202,6 +202,12 @@ describe('GeminiAdapter', () => {
     it('should include instruction in generated prompt', async () => {
       // Arrange
       const prompt = 'Original prompt';
+      const mockResponse = {
+        response: {
+          text: () => '{"title":"Title","body":"Body"}',
+        },
+      };
+      mockGenerativeModel.generateContent.mockResolvedValue(mockResponse);
 
       // Act
       await adapter.generate(prompt);

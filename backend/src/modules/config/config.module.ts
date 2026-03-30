@@ -5,8 +5,12 @@ import { ConfigController } from './presentation/config.controller';
 import { ConfigInternalController } from './presentation/config.internal.controller';
 
 @Module({
-  providers: [ConfigPrismaService, PromptTemplatesService],
+  providers: [
+    ConfigPrismaService,
+    { provide: 'ConfigPrismaService', useExisting: ConfigPrismaService },
+    PromptTemplatesService,
+  ],
   controllers: [ConfigController, ConfigInternalController],
-  exports: [ConfigPrismaService, PromptTemplatesService],
+  exports: [ConfigPrismaService, PromptTemplatesService, 'ConfigPrismaService'],
 })
 export class ConfigModule {}
