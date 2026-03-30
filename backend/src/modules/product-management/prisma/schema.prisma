@@ -1,0 +1,39 @@
+// This is your Prisma schema file for product-management module.
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/@prisma-client/product-management"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_PRODUCTS")
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  externalId    String   @unique
+  source        String   // "shopee" | "clickbank" | "cj"
+  name          String
+  description   String?
+  price         Float?
+  commission    Float? // Commission %
+  affiliateLink String   @unique
+  imageUrl      String?
+  rawData       Json // Original API response blob
+  status        ProductStatus @default(ACTIVE)
+  metadata      Json? // tags, categories, etc.
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([source])
+  @@index([status])
+  @@map("products")
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+}

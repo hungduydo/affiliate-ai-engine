@@ -1,0 +1,55 @@
+// Prisma schema for content-factory module
+// Manages AI-generated content for different platforms
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/@prisma-client/content-factory"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_CONTENT")
+}
+
+model Content {
+  id           String        @id @default(cuid())
+  productId    String // NO FOREIGN KEY — stored as reference only
+  platform     Platform
+  contentType  ContentType
+  title        String?
+  body         String
+  mediaAssets  Json? // Image URLs, video assets
+  promptId     String? // References config module's PromptTemplate
+  status       ContentStatus @default(RAW)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([productId])
+  @@index([status])
+  @@index([platform])
+  @@map("contents")
+}
+
+enum Platform {
+  WORDPRESS
+  FACEBOOK
+  TIKTOK
+  YOUTUBE
+  SHOPIFY
+}
+
+enum ContentType {
+  BLOG_POST
+  SOCIAL_POST
+  VIDEO_SCRIPT
+}
+
+enum ContentStatus {
+  RAW
+  AI_PROCESSING
+  GENERATED
+  PENDING_APPROVAL
+  PUBLISHING
+  PUBLISHED
+  FAILED
+}

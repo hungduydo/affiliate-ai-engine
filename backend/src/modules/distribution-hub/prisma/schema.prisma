@@ -1,0 +1,44 @@
+// Prisma schema for distribution-hub module
+// Tracks publishing logs and status of content distribution
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/@prisma-client/distribution-hub"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_PUBLISH")
+}
+
+model PublishLog {
+  id            String        @id @default(cuid())
+  contentId     String // NO FOREIGN KEY — stored as reference only
+  platform      Platform
+  publishedLink String?
+  status        PublishStatus @default(PENDING)
+  errorMessage  String?
+  publishedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([contentId])
+  @@index([status])
+  @@index([platform])
+  @@map("publish_logs")
+}
+
+enum Platform {
+  WORDPRESS
+  FACEBOOK
+  TIKTOK
+  YOUTUBE
+  SHOPIFY
+}
+
+enum PublishStatus {
+  PENDING
+  PUBLISHING
+  PUBLISHED
+  FAILED
+}

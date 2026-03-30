@@ -1,0 +1,42 @@
+// Prisma schema for config module
+// Centralized configuration and templates
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/@prisma-client/config"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_CONFIG")
+}
+
+model PromptTemplate {
+  id          String      @id @default(cuid())
+  name        String
+  platform    Platform
+  contentType ContentType
+  template    String
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([isActive])
+  @@index([platform])
+  @@index([contentType])
+  @@map("prompt_templates")
+}
+
+enum Platform {
+  WORDPRESS
+  FACEBOOK
+  TIKTOK
+  YOUTUBE
+  SHOPIFY
+}
+
+enum ContentType {
+  BLOG_POST
+  SOCIAL_POST
+  VIDEO_SCRIPT
+}

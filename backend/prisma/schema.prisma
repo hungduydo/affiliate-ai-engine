@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// PRODUCT MANAGEMENT AGGREGATE
+// ============================================================
+
+model Product {
+  id            String        @id @default(cuid())
+  externalId    String        @unique
+  source        String        // "shopee" | "clickbank" | "cj"
+  name          String
+  description   String?       @db.Text
+  price         Float?
+  commission    Float?
+  affiliateLink String        @unique
+  imageUrl      String?
+  rawData       Json
+  status        ProductStatus @default(ACTIVE)
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  contents      Content[]
+
+  @@map("products")
+}
+
+// ============================================================
+// CONTENT FACTORY AGGREGATE
+// ============================================================
+
+model Content {
+  id           String        @id @default(cuid())
+  productId    String
+  product      Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  platform     Platform
+  contentType  ContentType
+  title        String?
+  body         String        @db.Text
+  mediaAssets  Json?
+  promptId     String?
+  prompt       PromptTemplate? @relation(fields: [promptId], references: [id])
+  status       ContentStatus @default(RAW)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  publishLogs  PublishLog[]
+
+  @@map("contents")
+}
+
+model PromptTemplate {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  platform    Platform
+  contentType ContentType
+  template    String      @db.Text
+  variables   Json?       // Expected template variables: [{ name, description }]
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  contents    Content[]
+
+  @@map("prompt_templates")
+}
+
+// ============================================================
+// DISTRIBUTION HUB AGGREGATE
+// ============================================================
+
+model PublishLog {
+  id            String        @id @default(cuid())
+  contentId     String
+  content       Content       @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  platform      Platform
+  publishedLink String?
+  status        PublishStatus @default(PENDING)
+  errorMessage  String?
+  publishedAt   DateTime?
+  createdAt     DateTime      @default(now())
+
+  @@map("publish_logs")
+}
+
+// ============================================================
+// QUEUE ENGINE (cross-cutting)
+// ============================================================
+
+model JobLog {
+  id           String    @id @default(cuid())
+  jobName      String
+  jobId        String?   // BullMQ job ID
+  productId    String?
+  contentId    String?
+  status       JobStatus @default(PENDING)
+  data         Json
+  result       Json?
+  errorMessage String?   @db.Text
+  attempts     Int       @default(0)
+  createdAt    DateTime  @default(now())
+  completedAt  DateTime?
+
+  @@index([status])
+  @@index([jobName, status])
+  @@map("job_logs")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+}
+
+enum Platform {
+  WORDPRESS
+  FACEBOOK
+  TIKTOK
+  YOUTUBE
+  SHOPIFY
+}
+
+enum ContentType {
+  BLOG_POST
+  SOCIAL_POST
+  VIDEO_SCRIPT
+}
+
+enum ContentStatus {
+  RAW
+  AI_PROCESSING
+  GENERATED
+  PENDING_APPROVAL
+  PUBLISHING
+  PUBLISHED
+  FAILED
+}
+
+enum PublishStatus {
+  PENDING
+  PUBLISHING
+  PUBLISHED
+  FAILED
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  RETRYING
+}
