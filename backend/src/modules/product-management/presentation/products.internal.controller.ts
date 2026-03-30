@@ -6,7 +6,7 @@ import { CreateProductDto } from './dto/create-product.dto';
  * Internal API for other modules to fetch product data
  * No authentication required for internal service-to-service calls
  */
-@Controller('api/internal/products')
+@Controller('internal/products')
 export class ProductsInternalController {
   constructor(private productsService: ProductsService) {}
 

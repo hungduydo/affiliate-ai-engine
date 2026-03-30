@@ -5,7 +5,7 @@ import { PromptTemplatesService } from '../application/prompt-templates.service'
  * Internal API for other modules to fetch config data
  * No authentication required for internal service-to-service calls
  */
-@Controller('api/internal/prompts')
+@Controller('internal/prompts')
 export class ConfigInternalController {
   constructor(private promptTemplatesService: PromptTemplatesService) {}
 

@@ -5,7 +5,7 @@ import { QUEUE_NAMES, JobName } from '../../queue-engine/queue.constants';
 import { IngestProductsDto } from './dto/ingest-products.dto';
 
 @ApiTags('source-connector')
-@Controller('api/source-connector')
+@Controller('source-connector')
 export class SourceController {
   constructor(private readonly queueService: QueueService) {}
 

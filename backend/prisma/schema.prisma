@@ -58,11 +58,9 @@ model Content {
 model PromptTemplate {
   id          String      @id @default(cuid())
   name        String
-  description String?
   platform    Platform
   contentType ContentType
   template    String      @db.Text
-  variables   Json?       // Expected template variables: [{ name, description }]
   isActive    Boolean     @default(true)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt

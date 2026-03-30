@@ -69,22 +69,24 @@ export class CsvImporter {
     return new Promise((resolve, reject) => {
       const records: unknown[] = [];
       const stream = fs.createReadStream(filePath);
-
       const parser = parse({ relax_quotes: true, skip_empty_lines: true });
+
+      stream.on('error', reject);
+      parser.on('error', reject);
+      parser.on('end', () => resolve(records));
 
       parser.on('readable', () => {
         let record: unknown;
         while ((record = parser.read()) !== null) {
           records.push(record);
           if (maxRows && records.length >= maxRows) {
-            parser.end();
-            break;
+            stream.unpipe(parser);
+            stream.destroy();
+            resolve(records);
+            return;
           }
         }
       });
-
-      parser.on('error', reject);
-      parser.on('end', () => resolve(records));
 
       stream.pipe(parser);
     });

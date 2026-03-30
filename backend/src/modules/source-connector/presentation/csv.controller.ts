@@ -18,7 +18,7 @@ import { CsvConfirmDto } from './dto/csv-upload.dto';
 import { CsvFieldMapping } from '../infrastructure/csv/csv.importer';
 
 @ApiTags('source-connector')
-@Controller('api/source-connector')
+@Controller('source-connector')
 export class CsvController {
   constructor(
     private readonly csvImporter: CsvImporter,

@@ -6,7 +6,7 @@ import { ContentStatus } from '@prisma/client';
  * Internal API for other modules to fetch content data
  * No authentication required for internal service-to-service calls
  */
-@Controller('api/internal/content')
+@Controller('internal/content')
 export class ContentInternalController {
   constructor(private contentService: ContentService) {}
 

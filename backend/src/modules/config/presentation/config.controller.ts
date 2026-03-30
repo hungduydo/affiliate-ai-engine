@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/
 import { ConfigService } from '@nestjs/config';
 import { PromptTemplatesService } from '../application/prompt-templates.service';
 
-@Controller('api/config')
+@Controller('config')
 export class ConfigController {
   constructor(
     private promptTemplatesService: PromptTemplatesService,

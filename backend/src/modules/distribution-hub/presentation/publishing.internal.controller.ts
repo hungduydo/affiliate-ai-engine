@@ -5,7 +5,7 @@ import { PublishingService } from '../application/publishing.service';
  * Internal API for other modules to fetch publish log data
  * No authentication required for internal service-to-service calls
  */
-@Controller('api/internal/publish-logs')
+@Controller('internal/publish-logs')
 export class PublishingInternalController {
   constructor(private publishingService: PublishingService) {}
 
