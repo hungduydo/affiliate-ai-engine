@@ -37,6 +37,16 @@ export class CreateProductDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsUrl()
+  affiliateLink?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUrl()
+  productLink?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   rawData?: Record<string, unknown>;
 }
 

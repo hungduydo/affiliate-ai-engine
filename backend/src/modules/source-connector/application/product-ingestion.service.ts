@@ -82,6 +82,8 @@ export class ProductIngestionService {
             price: product.price,
             commission: product.commission,
             imageUrl: product.imageUrl,
+            affiliateLink: product.affiliateLink,
+            productLink: product.productLink,
             rawData: product.rawData,
           }),
         );

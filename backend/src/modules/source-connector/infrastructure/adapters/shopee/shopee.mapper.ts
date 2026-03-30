@@ -22,6 +22,7 @@ export function mapShopeeItem(item: ShopeeOfferItem): ScrapedProduct {
   const price = item.originalPrice ?? item.price;
   const commissionRate = item.commissionRate ?? item.commission_rate;
   const imageUrl = item.imageUrl ?? item.image;
+  const affiliateLink = item.affiliateLink ?? item.productLink;
 
   return {
     externalId: productId,
@@ -30,6 +31,7 @@ export function mapShopeeItem(item: ShopeeOfferItem): ScrapedProduct {
     price: typeof price === 'number' ? price / 100 : undefined, // Shopee prices in cents
     commission: typeof commissionRate === 'number' ? commissionRate * 100 : undefined, // Convert to %
     imageUrl: typeof imageUrl === 'string' ? imageUrl : undefined,
+    affiliateLink: typeof affiliateLink === 'string' ? affiliateLink : undefined,
     rawData: item as Record<string, unknown>,
   };
 }

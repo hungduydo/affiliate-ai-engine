@@ -15,7 +15,7 @@ describe('GeminiAdapter', () => {
   beforeEach(() => {
     // Setup ConfigService mock
     configService = {
-      getOrThrow: jest.fn().mockReturnValue('AIzaSyDHd0q9fslWvD-BnX_aMmz4j8reNbFbrO0'),
+      getOrThrow: jest.fn().mockReturnValue(' '),
       get: jest.fn().mockReturnValue('gemini-1.5-pro'),
     } as unknown as ConfigService;
 
@@ -99,7 +99,7 @@ describe('GeminiAdapter', () => {
 
       // Assert
       expect(result.body).toBe('Body without title');
-      expect(result.title).toBe('{"body":"Body without title"}'); // first 120 chars of raw text
+      expect(result.title).toBe('{"body":"Body without title"}');
     });
 
 
@@ -119,6 +119,59 @@ describe('GeminiAdapter', () => {
       // Assert
       expect(result.title).toBe('Title only');
       expect(result.body).toBe('{"title":"Title only"}');
+    });
+
+    it('should parse JSON with literal unescaped newlines in body (regression: gemini-2.5-flash)', async () => {
+      // Arrange — Gemini 2.5-flash emits literal \n inside JSON strings, breaking JSON.parse
+      const mockResponse = {
+        response: {
+          text: () =>
+            '{"title":"Product Title","body":"Line one\nLine two\nLine three"}',
+        },
+      };
+      mockGenerativeModel.generateContent.mockResolvedValue(mockResponse);
+
+      // Act
+      const result = await adapter.generate('test prompt');
+
+      // Assert — regex fallback must recover title and body correctly
+      expect(result.title).toBe('Product Title');
+      expect(result.body).toContain('Line one');
+      expect(result.body).toContain('Line two');
+    });
+
+    it('should parse JSON with escaped quotes inside body', async () => {
+      const mockResponse = {
+        response: {
+          text: () =>
+            '{"title":"Title","body":"He said \\"great product\\"!"}',
+        },
+      };
+      mockGenerativeModel.generateContent.mockResolvedValue(mockResponse);
+
+      const result = await adapter.generate('test prompt');
+
+      expect(result.title).toBe('Title');
+      expect(result.body).toBe('He said "great product"!');
+    });
+
+    it('should parse JSON with both literal newlines and multi-paragraph body', async () => {
+      const title = 'Amazing Earrings';
+      const bodyLine1 = 'Perfect for everyday wear.';
+      const bodyLine2 = 'Lightweight and stylish.';
+      const mockResponse = {
+        response: {
+          text: () =>
+            `{"title":"${title}","body":"${bodyLine1}\n\n${bodyLine2}"}`,
+        },
+      };
+      mockGenerativeModel.generateContent.mockResolvedValue(mockResponse);
+
+      const result = await adapter.generate('test prompt');
+
+      expect(result.title).toBe(title);
+      expect(result.body).toContain(bodyLine1);
+      expect(result.body).toContain(bodyLine2);
     });
 
     it('should fall back to raw text when JSON parsing fails', async () => {

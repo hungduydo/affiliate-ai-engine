@@ -6,6 +6,8 @@ export interface ScrapedProduct {
   price?: number;
   commission?: number;
   imageUrl?: string;
+  affiliateLink?: string;
+  productLink?: string;
   rawData: Record<string, unknown>;
 }
 

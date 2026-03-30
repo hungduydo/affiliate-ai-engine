@@ -22,12 +22,14 @@ export function ProductImportPage() {
     const autoMap: Record<string, string> = {};
     preview.headers.forEach((h) => {
       const lower = h.toLowerCase().replace(/[\s_-]/g, '');
-      if (lower.includes('id') || lower.includes('sku')) autoMap[h] = 'externalId';
-      else if (lower.includes('name') || lower.includes('title') || lower.includes('product')) autoMap[h] = 'name';
-      else if (lower.includes('desc')) autoMap[h] = 'description';
-      else if (lower.includes('price')) autoMap[h] = 'price';
-      else if (lower.includes('commission')) autoMap[h] = 'commission';
-      else if (lower.includes('image') || lower.includes('img')) autoMap[h] = 'imageUrl';
+      if (lower.includes('id') || lower.includes('sku') || lower.includes('mãsảnphẩm')) autoMap[h] = 'externalId';
+      else if (lower.includes('name') || lower.includes('title') || lower.includes('product') || lower.includes('tênsảnphẩm')) autoMap[h] = 'name';
+      else if (lower.includes('desc') || lower.includes('môtả')) autoMap[h] = 'description';
+      else if (lower.includes('price') || lower.includes('giá')) autoMap[h] = 'price';
+      else if (lower.includes('commission') || lower.includes('hoahồng') || lower.includes('tỉlệ')) autoMap[h] = 'commission';
+      else if (lower.includes('image') || lower.includes('img') || lower.includes('hình')) autoMap[h] = 'imageUrl';
+      else if (lower.includes('liênkếttiếpthị') || lower.includes('linkưuđãi') || lower.includes('affiliate')) autoMap[h] = 'affiliateLink';
+      else if (lower.includes('linksảnphẩm') || lower.includes('productlink') || lower.includes('link') || lower.includes('url')) autoMap[h] = 'productLink';
       else autoMap[h] = 'skip';
     });
     setMapping(autoMap);

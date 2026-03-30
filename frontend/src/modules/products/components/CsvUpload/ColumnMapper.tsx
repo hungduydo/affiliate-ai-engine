@@ -6,6 +6,8 @@ const PRODUCT_FIELDS = [
   { value: 'price', label: 'Price' },
   { value: 'commission', label: 'Commission %' },
   { value: 'imageUrl', label: 'Image URL' },
+  { value: 'affiliateLink', label: 'Affiliate Link' },
+  { value: 'productLink', label: 'Product Link' },
 ] as const;
 
 const SOURCES = [

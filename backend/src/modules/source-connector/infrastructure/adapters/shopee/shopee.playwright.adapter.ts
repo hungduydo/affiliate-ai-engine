@@ -20,12 +20,34 @@ export class ShopeePlaywrightAdapter implements ISourceAdapter {
     }
 
     const cookiesRaw = fs.readFileSync(cookieFilePath, 'utf-8');
-    const rawCookies = JSON.parse(cookiesRaw) as Array<Record<string, unknown>>;
+    const parsed = JSON.parse(cookiesRaw) as unknown;
+
+    type RawCookie = Record<string, unknown>;
+    let rawCookies: RawCookie[];
+
+    if (Array.isArray(parsed)) {
+      // Standard format: [{ name, value, domain, ... }, ...]
+      rawCookies = parsed as RawCookie[];
+    } else if (parsed && typeof parsed === 'object' && Array.isArray((parsed as RawCookie).cookies)) {
+      // Wrapped format: { cookies: [...] }
+      rawCookies = (parsed as RawCookie).cookies as RawCookie[];
+    } else if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      // Key-value map format: { cookieName: cookieValue, ... } (e.g. exported from EditThisCookie)
+      rawCookies = Object.entries(parsed as Record<string, string>).map(([name, value]) => ({
+        name,
+        value: String(value),
+        domain: '.shopee.vn',
+        path: '/',
+      }));
+    } else {
+      throw new Error(`Shopee cookie file format not recognized. Expected array or object, found: ${typeof parsed}`);
+    }
+
     const cookies = rawCookies.map((c) => ({
       name: c.name as string,
       value: c.value as string,
-      domain: c.domain as string | undefined,
-      path: c.path as string | undefined,
+      domain: (c.domain as string | undefined) ?? '.shopee.vn',
+      path: (c.path as string | undefined) ?? '/',
       httpOnly: c.httpOnly as boolean | undefined,
       secure: c.secure as boolean | undefined,
       sameSite: (c.sameSite as 'Strict' | 'Lax' | 'None' | undefined),

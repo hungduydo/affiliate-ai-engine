@@ -28,7 +28,8 @@ export class ProductsService {
     if (existing) {
       throw new BadRequestException(`Product with externalId ${dto.externalId} already exists`);
     }
-    const affiliateLink = this.deeplinkGen.generate(dto.source, dto.externalId);
+    // Use provided affiliateLink if available, otherwise generate one
+    const affiliateLink = dto.affiliateLink || this.deeplinkGen.generate(dto.source, dto.externalId);
     return this.productRepo.create({
       ...dto,
       affiliateLink,
@@ -73,16 +74,20 @@ export class ProductsService {
   async createOrUpdate(dto: CreateProductDto) {
     const existing = await this.productRepo.findByExternalId(dto.externalId);
     if (existing) {
+      // If a new affiliate link is provided, use it; otherwise keep existing or generate
+      const affiliateLink = dto.affiliateLink || existing.affiliateLink || this.deeplinkGen.generate(dto.source, dto.externalId);
       return this.productRepo.update(existing.id, {
         name: dto.name,
         description: dto.description ?? null,
         price: dto.price ?? null,
         commission: dto.commission ?? null,
         imageUrl: dto.imageUrl ?? null,
+        affiliateLink,
         rawData: dto.rawData ?? {},
       });
     }
-    const affiliateLink = this.deeplinkGen.generate(dto.source, dto.externalId);
+    // Use provided affiliateLink if available, otherwise generate one
+    const affiliateLink = this.deeplinkGen.generate(dto.source, dto.externalId, dto.affiliateLink);
     return this.productRepo.create({
       ...dto,
       affiliateLink,

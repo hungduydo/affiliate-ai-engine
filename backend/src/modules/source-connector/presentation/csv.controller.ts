@@ -59,10 +59,13 @@ export class CsvController {
   @Post('import-csv/confirm')
   @ApiOperation({ summary: 'Confirm CSV import with column mapping' })
   async confirmImport(@Body() dto: CsvConfirmDto) {
+    const mapping = Object.fromEntries(
+      Object.entries(dto.mapping).filter(([, v]) => v !== 'skip'),
+    ) as CsvFieldMapping;
     const jobId = await this.queueService.addJob(
       QUEUE_NAMES.PRODUCT_INGESTION,
       JobName.IMPORT_CSV,
-      { filePath: dto.filePath, mapping: dto.mapping as CsvFieldMapping, source: dto.source },
+      { filePath: dto.filePath, mapping, source: dto.source },
     );
     return { jobId, status: 'queued' };
   }
