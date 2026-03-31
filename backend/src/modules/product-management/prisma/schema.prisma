@@ -11,23 +11,27 @@ datasource db {
 }
 
 model Product {
-  id            String   @id @default(cuid())
-  externalId    String   @unique
-  source        String   // "shopee" | "clickbank" | "cj"
+  id            String        @id @default(cuid())
+  externalId    String        @unique
+  source        String        // "shopee" | "clickbank" | "cj" | "lazada"
   name          String
   description   String?
   price         Float?
-  commission    Float? // Commission %
-  affiliateLink String   @unique
+  commission    Float?        // Commission %
+  affiliateLink String        @unique
+  productLink   String?       // Direct product URL (for enrichment crawl)
   imageUrl      String?
-  rawData       Json // Original API response blob
+  rawData       Json          // Original API response blob
   status        ProductStatus @default(ACTIVE)
-  metadata      Json? // tags, categories, etc.
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  enrichStatus  EnrichStatus  @default(PENDING)
+  enrichedAt    DateTime?
+  metadata      Json?         // tags, categories, gallery, videos, rating, etc.
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@index([source])
   @@index([status])
+  @@index([enrichStatus])
   @@map("products")
 }
 
@@ -35,4 +39,12 @@ enum ProductStatus {
   ACTIVE
   INACTIVE
   PENDING
+}
+
+enum EnrichStatus {
+  PENDING
+  ENRICHING
+  DONE
+  FAILED
+  SKIPPED
 }

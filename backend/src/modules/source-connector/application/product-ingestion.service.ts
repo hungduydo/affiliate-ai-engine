@@ -18,6 +18,8 @@ export interface IngestResult {
   saved: number;
   skipped: number;
   errors: number;
+  /** DB product IDs that were saved/updated — used by auto-enrich */
+  productIds: string[];
 }
 
 @Injectable()
@@ -70,11 +72,12 @@ export class ProductIngestionService {
     let saved = 0;
     let skipped = 0;
     let errors = 0;
+    const productIds: string[] = [];
 
     for (const product of products) {
       try {
-        await firstValueFrom(
-          this.http.post(this.internalProductsUrl, {
+        const res = await firstValueFrom(
+          this.http.post<{ id: string }>(this.internalProductsUrl, {
             externalId: product.externalId,
             source: product.source,
             name: product.name,
@@ -88,6 +91,7 @@ export class ProductIngestionService {
           }),
         );
         saved++;
+        if (res.data?.id) productIds.push(res.data.id);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         this.logger.warn(`Failed to save product ${product.externalId}: ${message}`);
@@ -96,6 +100,6 @@ export class ProductIngestionService {
     }
 
     this.logger.log(`Ingestion complete: saved=${saved}, skipped=${skipped}, errors=${errors}`);
-    return { saved, skipped, errors };
+    return { saved, skipped, errors, productIds };
   }
 }

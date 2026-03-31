@@ -2,8 +2,10 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaProductRepository } from '../infrastructure/prisma-product.repository';
 import { DeeplinkGenerator } from '../infrastructure/deeplink-generator';
 import { CreateProductDto } from '../presentation/dto/create-product.dto';
+import { EnrichProductDto } from '../presentation/dto/enrich-product.dto';
 import { ProductFilter } from '../domain/repositories/product.repository.interface';
 import { ProductStatus } from '@prisma/client';
+import { EnrichStatus } from '@prisma-client/product-management';
 import { canTransitionStatus } from '../domain/value-objects/product-status.vo';
 
 @Injectable()
@@ -33,8 +35,11 @@ export class ProductsService {
     return this.productRepo.create({
       ...dto,
       affiliateLink,
+      productLink: dto.productLink ?? null,
       rawData: dto.rawData ?? {},
       status: ProductStatus.ACTIVE,
+      enrichStatus: EnrichStatus.PENDING,
+      enrichedAt: null,
       description: dto.description ?? null,
       price: dto.price ?? null,
       commission: dto.commission ?? null,
@@ -83,6 +88,7 @@ export class ProductsService {
         commission: dto.commission ?? null,
         imageUrl: dto.imageUrl ?? null,
         affiliateLink,
+        productLink: dto.productLink ?? existing.productLink,
         rawData: dto.rawData ?? {},
       });
     }
@@ -91,13 +97,41 @@ export class ProductsService {
     return this.productRepo.create({
       ...dto,
       affiliateLink,
+      productLink: dto.productLink ?? null,
       rawData: dto.rawData ?? {},
       status: ProductStatus.ACTIVE,
+      enrichStatus: EnrichStatus.PENDING,
+      enrichedAt: null,
       description: dto.description ?? null,
       price: dto.price ?? null,
       commission: dto.commission ?? null,
       imageUrl: dto.imageUrl ?? null,
       metadata: null,
     });
+  }
+
+  async applyEnrichment(id: string, dto: EnrichProductDto) {
+    const product = await this.findById(id);
+
+    const currentMeta = (product.metadata ?? {}) as Record<string, unknown>;
+    const updatedMeta: Record<string, unknown> = { ...currentMeta };
+
+    if (dto.images?.length) updatedMeta.gallery = dto.images;
+    if (dto.videos?.length) updatedMeta.videos = dto.videos;
+    if (dto.rating != null) updatedMeta.rating = dto.rating;
+    if (dto.reviewCount != null) updatedMeta.reviewCount = dto.reviewCount;
+    if (dto.categories?.length) updatedMeta.categories = dto.categories;
+
+    return this.productRepo.update(id, {
+      ...(dto.description && !product.description ? { description: dto.description } : {}),
+      ...(dto.primaryImageUrl && !product.imageUrl ? { imageUrl: dto.primaryImageUrl } : {}),
+      metadata: updatedMeta,
+      enrichedAt: new Date(),
+      ...(dto.enrichStatus ? { enrichStatus: dto.enrichStatus } : {}),
+    });
+  }
+
+  async setEnrichStatus(id: string, status: EnrichStatus) {
+    return this.productRepo.update(id, { enrichStatus: status });
   }
 }

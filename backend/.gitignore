@@ -2,3 +2,5 @@ node_modules/
 dist/
 .env
 *.local
+shopee-cookies.json
+*cookies.json

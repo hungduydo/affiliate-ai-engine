@@ -51,6 +51,14 @@ export const importService = {
   confirmCsv: (data: CsvConfirmRequest): Promise<JobResponse> =>
     apiClient.post<JobResponse>('/source-connector/import-csv/confirm', data).then((r) => r.data),
 
-  getJobStatus: (jobId: string): Promise<JobStatusResponse> =>
-    apiClient.get<JobStatusResponse>(`/source-connector/jobs/${jobId}`).then((r) => r.data),
+  getJobStatus: (jobId: string, queue?: string): Promise<JobStatusResponse> =>
+    apiClient
+      .get<JobStatusResponse>(`/source-connector/jobs/${jobId}`, { params: queue ? { queue } : undefined })
+      .then((r) => r.data),
+
+  enrichProduct: (productId: string): Promise<JobResponse> =>
+    apiClient.post<JobResponse>(`/source-connector/enrich/${productId}`).then((r) => r.data),
+
+  enrichBatch: (productIds: string[]): Promise<{ jobIds: string[]; count: number }> =>
+    apiClient.post<{ jobIds: string[]; count: number }>('/source-connector/enrich-batch', { productIds }).then((r) => r.data),
 };

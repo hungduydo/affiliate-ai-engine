@@ -16,7 +16,7 @@
     "skipLibCheck": true,
     "strictNullChecks": true,
     "noImplicitAny": false,
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,

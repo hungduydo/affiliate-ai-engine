@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Search, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useProducts, useDeleteProduct } from '../hooks/useProducts';
+import { useProducts, useDeleteProduct, useEnrichProduct } from '../hooks/useProducts';
 import { ProductTable } from '../components/ProductTable/ProductTable';
 import type { ProductStatus } from '@core/api/api.types';
 
@@ -13,6 +13,7 @@ export function ProductListPage() {
 
   const { data, isLoading, isError } = useProducts({ search, status: status || undefined, page, limit: 20 });
   const { mutate: deleteProduct } = useDeleteProduct();
+  const { mutate: enrichProduct, isPending: isEnriching, variables: enrichingId } = useEnrichProduct();
 
   return (
     <div className="space-y-5">
@@ -63,7 +64,12 @@ export function ProductListPage() {
         <div className="text-red-400 text-sm py-8 text-center">Failed to load products</div>
       ) : (
         <>
-          <ProductTable products={data?.data ?? []} onDelete={(id) => deleteProduct(id)} />
+          <ProductTable
+            products={data?.data ?? []}
+            onDelete={(id) => deleteProduct(id)}
+            onEnrich={(id) => enrichProduct(id)}
+            enrichingId={isEnriching ? (enrichingId ?? null) : null}
+          />
           {/* Pagination */}
           {data && data.totalPages > 1 && (
             <div className="flex items-center justify-between text-sm text-zinc-400">

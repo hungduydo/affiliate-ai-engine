@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Queue } from 'bullmq';
+import { Queue, JobsOptions } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { QUEUE_NAMES, JobName } from './queue.constants';
 
@@ -29,13 +29,19 @@ export class QueueService {
     this.logger.log(`Queues initialized: ${Object.values(QUEUE_NAMES).join(', ')}`);
   }
 
-  async addJob(queueName: string, jobName: JobName, data: Record<string, unknown>): Promise<string> {
+  async addJob(
+    queueName: string,
+    jobName: JobName,
+    data: Record<string, unknown>,
+    options?: Pick<JobsOptions, 'delay' | 'attempts' | 'backoff'>,
+  ): Promise<string> {
     const queue = this.queues.get(queueName);
     if (!queue) throw new Error(`Queue ${queueName} not found`);
 
     const job = await queue.add(jobName, data, {
-      attempts: 3,
-      backoff: { type: 'exponential', delay: 5000 },
+      attempts: options?.attempts ?? 3,
+      backoff: options?.backoff ?? { type: 'exponential', delay: 5000 },
+      delay: options?.delay,
     });
 
     this.logger.log(`Job added: ${jobName} (${job.id}) to queue ${queueName}`);

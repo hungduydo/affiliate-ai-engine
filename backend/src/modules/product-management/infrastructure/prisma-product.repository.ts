@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma-client/product-management';
 import { ProductPrismaService } from '../prisma/prisma.service';
 import { IProductRepository, ProductFilter } from '../domain/repositories/product.repository.interface';
 import { ProductEntity } from '../domain/entities/product.entity';
@@ -59,6 +59,7 @@ export class PrismaProductRepository implements IProductRepository {
         price: data.price,
         commission: data.commission,
         affiliateLink: data.affiliateLink,
+        productLink: data.productLink,
         imageUrl: data.imageUrl,
         rawData: (data.rawData ?? {}) as Prisma.InputJsonValue,
         status: data.status,

@@ -7,11 +7,20 @@ export interface PaginatedResult<T> {
 }
 
 export type ProductStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING';
+export type EnrichStatus = 'PENDING' | 'ENRICHING' | 'DONE' | 'FAILED' | 'SKIPPED';
 export type Platform = 'WORDPRESS' | 'FACEBOOK' | 'TIKTOK' | 'YOUTUBE' | 'SHOPIFY';
 export type ContentType = 'BLOG_POST' | 'SOCIAL_POST' | 'VIDEO_SCRIPT';
 export type ContentStatus = 'RAW' | 'AI_PROCESSING' | 'GENERATED' | 'PENDING_APPROVAL' | 'PUBLISHING' | 'PUBLISHED' | 'FAILED';
 export type PublishStatus = 'PENDING' | 'PUBLISHING' | 'PUBLISHED' | 'FAILED';
 export type JobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'RETRYING';
+
+export interface ProductMetadata {
+  gallery?: { url: string; isPrimary?: boolean }[];
+  videos?: { url: string; thumbnailUrl?: string }[];
+  rating?: number;
+  reviewCount?: number;
+  categories?: string[];
+}
 
 export interface Product {
   id: string;
@@ -22,8 +31,12 @@ export interface Product {
   price?: number;
   commission?: number;
   affiliateLink: string;
+  productLink?: string;
   imageUrl?: string;
   status: ProductStatus;
+  enrichStatus?: EnrichStatus;
+  enrichedAt?: string;
+  metadata?: ProductMetadata;
   createdAt: string;
   updatedAt: string;
 }
