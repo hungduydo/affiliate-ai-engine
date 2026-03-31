@@ -23,6 +23,8 @@ export interface ProductDetail {
   reviewCount?: number;
   /** Stored in metadata.categories */
   categories?: string[];
+  /** Written to the price column if currently null */
+  price?: number;
 }
 
 export interface IProductDetailFetcher {

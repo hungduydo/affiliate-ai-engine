@@ -21,6 +21,8 @@ export class LazadaDetailFetcher implements IProductDetailFetcher {
 
     const browser = await chromium.launch({ headless: true });
     let detail: ProductDetail | null = null;
+    const capturedResponses: Array<{ url: string; status: number; contentType: string }> = [];
+    const startTime = Date.now();
 
     try {
       const context = await browser.newContext({ userAgent: REALISTIC_UA });
@@ -35,36 +37,118 @@ export class LazadaDetailFetcher implements IProductDetailFetcher {
 
       const page = await context.newPage();
 
+      // Log page console messages
+      page.on('console', (msg) => {
+        this.logger.debug(`[Lazada Page Console] ${msg.type()}: ${msg.text()}`);
+      });
+
+      // Log page errors
+      page.on('pageerror', (error) => {
+        this.logger.warn(`[Lazada Page Error]: ${error.message}`);
+      });
+
       page.on('response', async (response) => {
-        if (detail) return;
         const url = response.url();
-        if (!url.includes('acs.lazada.com') && !url.includes('rest.lazada.com') && !url.includes('lazada.com/pdp')) {
+        const status = response.status();
+        const contentType = response.headers()['content-type'] ?? '';
+
+        capturedResponses.push({ url, status, contentType });
+
+        // Check for known Lazada API endpoints
+        const isLazadaKnownApi =
+          url.includes('acs.lazada.com') || url.includes('rest.lazada.com') || url.includes('lazada.com/pdp');
+
+        const marker = isLazadaKnownApi ? '📦' : '  ';
+        this.logger.debug(
+          `[Lazada Response] ${marker} ${status} ${url.substring(0, 80)}... | CT: ${contentType.substring(0, 40)}`
+        );
+
+        if (detail) return;
+
+        // Check if URL matches Lazada API patterns
+        const isLazadaApi = url.includes('acs.lazada.com') || url.includes('rest.lazada.com') || url.includes('lazada.com/pdp');
+        if (!isLazadaApi) {
           return;
         }
+
+        this.logger.debug(`[Lazada API Match] ${url.substring(0, 80)}`);
+
         try {
           const contentType = response.headers()['content-type'] ?? '';
           if (!contentType.includes('application/json')) return;
+
           const json = await response.json() as Record<string, unknown>;
+          const jsonKeys = Object.keys(json).slice(0, 5).join(', ');
+          this.logger.debug(`[Lazada JSON Keys] ${jsonKeys}`);
+
+          // Log first 1000 chars of JSON to understand structure
+          const jsonStr = JSON.stringify(json).substring(0, 1000);
+          this.logger.debug(`[Lazada JSON Preview] ${jsonStr}`);
+
           const mapped = mapLazadaDetail(json);
           if (mapped) {
             detail = mapped;
-            this.logger.log(`Lazada detail intercepted for ${productLink}`);
+            this.logger.log(`✓ Lazada detail intercepted for ${productLink} (${Date.now() - startTime}ms)`);
+          } else {
+            this.logger.debug(`[Lazada mapLazadaDetail returned null] Check mapper logic. Full response: ${jsonStr}`);
           }
-        } catch {
-          // Ignore parse errors
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          this.logger.debug(`[Lazada JSON Parse Error] ${errorMsg} from ${url.substring(0, 60)}`);
         }
       });
+
+      this.logger.debug(`[Lazada Navigating] to ${productLink}`);
+      const navStartTime = Date.now();
 
       // Random delay to appear more human-like
       await new Promise((resolve) => setTimeout(resolve, 300 + Math.random() * 1200));
       await page.goto(productLink, { waitUntil: 'networkidle', timeout: 35000 });
+      this.logger.debug(`[Lazada Navigation Complete] ${Date.now() - navStartTime}ms`);
+
       await page.waitForTimeout(2000);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      this.logger.error(`[Lazada Browser Error] ${errorMsg}`);
     } finally {
       await browser.close();
     }
 
     if (!detail) {
-      this.logger.warn(`Lazada: no detail intercepted for ${productLink}. Check DevTools for correct API endpoint.`);
+      const totalTime = Date.now() - startTime;
+      this.logger.warn(
+        `Lazada: no detail intercepted for ${productLink} (${totalTime}ms). ` +
+        `Captured ${capturedResponses.length} responses. ` +
+        `Check logs above for 📦 known Lazada API endpoints.`
+      );
+
+      // Log all ACS/REST/PDP API responses
+      const knownLazadaApis = capturedResponses.filter((r) => {
+        return r.url.includes('acs.lazada.com') || r.url.includes('rest.lazada.com') || r.url.includes('lazada.com/pdp');
+      });
+
+      if (knownLazadaApis.length > 0) {
+        this.logger.debug(`[Lazada Known APIs] (${knownLazadaApis.length} found):`);
+        knownLazadaApis.forEach((r) => {
+          this.logger.debug(`  ${r.status} ${r.url.substring(0, 100)}`);
+        });
+      }
+
+      // Also log any other API-like URLs
+      const otherApiUrls = capturedResponses.filter(
+        (r) =>
+          !r.url.includes('acs.lazada.com') &&
+          !r.url.includes('rest.lazada.com') &&
+          !r.url.includes('lazada.com/pdp') &&
+          (r.url.includes('/api/') || r.url.includes('/item') || r.url.includes('/product'))
+      );
+
+      if (otherApiUrls.length > 0) {
+        this.logger.debug(`[Lazada Other API URLs] (${otherApiUrls.length} found):`);
+        otherApiUrls.forEach((r) => {
+          this.logger.debug(`  ${r.status} ${r.url.substring(0, 100)}`);
+        });
+      }
     }
     return detail;
   }

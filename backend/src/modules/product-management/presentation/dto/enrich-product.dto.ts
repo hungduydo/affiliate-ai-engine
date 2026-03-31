@@ -54,6 +54,10 @@ export class EnrichProductDto {
   categories?: string[];
 
   @IsOptional()
+  @IsNumber()
+  price?: number;
+
+  @IsOptional()
   @IsEnum(EnrichStatus)
   enrichStatus?: EnrichStatus;
 }

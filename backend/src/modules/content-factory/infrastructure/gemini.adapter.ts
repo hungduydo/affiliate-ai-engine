@@ -28,7 +28,13 @@ Respond MUST a valid JSON object in this exact format (no markdown, no explanati
 {"title":"<content title here>","body":"<full content body here>"}`;
     this.logger.log(fullPrompt)
     const model = this.client.getGenerativeModel({ model: this.modelName });
-    const result = await model.generateContent(fullPrompt);
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
+      generationConfig: {
+        // Force JSON output to prevent parsing errors
+        responseMimeType: "application/json"
+      }
+    });
     const text = result.response.text().trim();
 
     try {

@@ -48,6 +48,17 @@ services:
     profiles:
       - tools
 
+  shopee-crawler:
+    build: ./infra/shopee-crawler
+    container_name: omniaffiliate_shopee_crawler
+    restart: unless-stopped
+    ports:
+      - '3002:3000'
+    environment:
+      PORT: 3000
+      IS_DOCKER: "1"
+    shm_size: "2gb"
+
 volumes:
   postgres_data:
   redis_data:

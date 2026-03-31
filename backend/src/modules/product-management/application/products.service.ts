@@ -125,6 +125,7 @@ export class ProductsService {
     return this.productRepo.update(id, {
       ...(dto.description && !product.description ? { description: dto.description } : {}),
       ...(dto.primaryImageUrl && !product.imageUrl ? { imageUrl: dto.primaryImageUrl } : {}),
+      ...(dto.price != null && product.price == null ? { price: dto.price } : {}),
       metadata: updatedMeta,
       enrichedAt: new Date(),
       ...(dto.enrichStatus ? { enrichStatus: dto.enrichStatus } : {}),

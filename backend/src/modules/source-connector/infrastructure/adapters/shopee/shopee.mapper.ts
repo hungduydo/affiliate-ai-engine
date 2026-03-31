@@ -13,6 +13,9 @@ export interface ShopeeOfferItem {
   affiliateLink?: string;
   imageUrl?: string;
   image?: string;
+  shopId?: string | number;
+  shop_id?: string | number;
+  shopid?: string | number;
   [key: string]: unknown;
 }
 
@@ -24,6 +27,15 @@ export function mapShopeeItem(item: ShopeeOfferItem): ScrapedProduct {
   const imageUrl = item.imageUrl ?? item.image;
   const affiliateLink = item.affiliateLink ?? item.productLink;
 
+  // Build direct product link for enrichment crawling
+  const shopId = item.shopId ?? item.shop_id ?? item.shopid;
+  const productLink =
+    shopId && productId
+      ? `https://shopee.vn/product/${shopId}/${productId}`
+      : typeof item.productLink === 'string'
+        ? item.productLink
+        : undefined;
+
   return {
     externalId: productId,
     source: 'shopee',
@@ -32,6 +44,7 @@ export function mapShopeeItem(item: ShopeeOfferItem): ScrapedProduct {
     commission: typeof commissionRate === 'number' ? commissionRate * 100 : undefined, // Convert to %
     imageUrl: typeof imageUrl === 'string' ? imageUrl : undefined,
     affiliateLink: typeof affiliateLink === 'string' ? affiliateLink : undefined,
+    productLink,
     rawData: item as Record<string, unknown>,
   };
 }
