@@ -1,9 +1,9 @@
 import { ContentGenerationService } from '../application/content-generation.service';
 import { ContentPrismaService } from '../prisma/prisma.service';
-import { GeminiAdapter } from '../infrastructure/gemini.adapter';
+import { GeminiAdapter } from '../../../shared/ai/gemini.adapter';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
-import { ContentStatus, Platform, ContentType } from '@prisma/client';
+import { ContentStatus, Platform, ContentType } from '@prisma-client/content-factory';
 import { of, throwError } from 'rxjs';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 
@@ -15,7 +15,7 @@ import {
   createGeneratedContentFixture,
 } from './fixtures/content.fixtures';
 
-jest.mock('../infrastructure/gemini.adapter');
+jest.mock('../../../shared/ai/gemini.adapter');
 
 describe('ContentGenerationService', () => {
   let service: ContentGenerationService;

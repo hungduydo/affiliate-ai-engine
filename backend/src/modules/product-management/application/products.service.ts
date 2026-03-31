@@ -4,8 +4,7 @@ import { DeeplinkGenerator } from '../infrastructure/deeplink-generator';
 import { CreateProductDto } from '../presentation/dto/create-product.dto';
 import { EnrichProductDto } from '../presentation/dto/enrich-product.dto';
 import { ProductFilter } from '../domain/repositories/product.repository.interface';
-import { ProductStatus } from '@prisma/client';
-import { EnrichStatus } from '@prisma-client/product-management';
+import { ProductStatus, EnrichStatus } from '@prisma-client/product-management';
 import { canTransitionStatus } from '../domain/value-objects/product-status.vo';
 
 @Injectable()
@@ -37,7 +36,7 @@ export class ProductsService {
       affiliateLink,
       productLink: dto.productLink ?? null,
       rawData: dto.rawData ?? {},
-      status: ProductStatus.ACTIVE,
+      status: ProductStatus.RAW,
       enrichStatus: EnrichStatus.PENDING,
       enrichedAt: null,
       description: dto.description ?? null,
@@ -45,6 +44,8 @@ export class ProductsService {
       commission: dto.commission ?? null,
       imageUrl: dto.imageUrl ?? null,
       metadata: null,
+      productDna: null,
+      dnaExtractedAt: null,
     });
   }
 
@@ -66,7 +67,7 @@ export class ProductsService {
   async getProducts(filters: { source?: string; status?: string; page?: number; pageSize?: number }) {
     return this.findMany({
       source: filters.source,
-      status: filters.status as ProductStatus,
+      status: filters.status as ProductStatus | undefined,
       page: filters.page || 1,
       limit: filters.pageSize || 10,
     });
@@ -99,7 +100,7 @@ export class ProductsService {
       affiliateLink,
       productLink: dto.productLink ?? null,
       rawData: dto.rawData ?? {},
-      status: ProductStatus.ACTIVE,
+      status: (dto as { status?: ProductStatus }).status ?? ProductStatus.RAW,
       enrichStatus: EnrichStatus.PENDING,
       enrichedAt: null,
       description: dto.description ?? null,
@@ -107,6 +108,8 @@ export class ProductsService {
       commission: dto.commission ?? null,
       imageUrl: dto.imageUrl ?? null,
       metadata: null,
+      productDna: null,
+      dnaExtractedAt: null,
     });
   }
 

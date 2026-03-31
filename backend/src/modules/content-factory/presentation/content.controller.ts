@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { ContentService } from '../application/content.service';
 import { CreateContentDto, UpdateContentStatusDto, GenerateContentDto } from './dto/create-content.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
-import { ContentStatus, Platform, ContentType } from '@prisma/client';
+import { ContentStatus, Platform, ContentType } from '@prisma-client/content-factory';
 import { QueueService } from '../../queue-engine/queue.service';
 import { QUEUE_NAMES, JobName } from '../../queue-engine/queue.constants';
 

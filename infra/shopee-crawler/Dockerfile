@@ -6,7 +6,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y xvfb && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 COPY server.mjs entrypoint.sh ./
 RUN chmod +x entrypoint.sh

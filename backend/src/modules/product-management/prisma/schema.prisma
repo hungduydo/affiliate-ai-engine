@@ -11,23 +11,25 @@ datasource db {
 }
 
 model Product {
-  id            String        @id @default(cuid())
-  externalId    String        @unique
-  source        String        // "shopee" | "clickbank" | "cj" | "lazada"
-  name          String
-  description   String?
-  price         Float?
-  commission    Float?        // Commission %
-  affiliateLink String        @unique
-  productLink   String?       // Direct product URL (for enrichment crawl)
-  imageUrl      String?
-  rawData       Json          // Original API response blob
-  status        ProductStatus @default(ACTIVE)
-  enrichStatus  EnrichStatus  @default(PENDING)
-  enrichedAt    DateTime?
-  metadata      Json?         // tags, categories, gallery, videos, rating, etc.
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id               String        @id @default(cuid())
+  externalId       String        @unique
+  source           String        // "shopee" | "clickbank" | "cj" | "lazada"
+  name             String
+  description      String?
+  price            Float?
+  commission       Float?        // Commission %
+  affiliateLink    String        @unique
+  productLink      String?       // Direct product URL (for enrichment crawl)
+  imageUrl         String?
+  rawData          Json          // Original API response blob
+  status           ProductStatus @default(RAW)
+  enrichStatus     EnrichStatus  @default(PENDING)
+  enrichedAt       DateTime?
+  metadata         Json?         // tags, categories, gallery, videos, rating, etc.
+  productDna       Json?         // Extracted Product DNA (coreProblem, keyFeatures, etc.)
+  dnaExtractedAt   DateTime?     // Timestamp of last DNA extraction
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
   @@index([source])
   @@index([status])
@@ -36,9 +38,10 @@ model Product {
 }
 
 enum ProductStatus {
-  ACTIVE
+  RAW        // Imported, no detail fetched yet
+  ENRICHED   // Product detail successfully fetched
+  ACTIVE     // DNA extracted — ready for content generation
   INACTIVE
-  PENDING
 }
 
 enum EnrichStatus {

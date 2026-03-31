@@ -49,6 +49,17 @@ export function useEnrichProduct() {
   });
 }
 
+export function useExtractProductDNA() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (productId: string) => productsService.extractDNA(productId),
+    onSuccess: (_data, productId) => {
+      qc.invalidateQueries({ queryKey: [PRODUCTS_KEY, productId] });
+      qc.invalidateQueries({ queryKey: [PRODUCTS_KEY] });
+    },
+  });
+}
+
 export function useEnrichmentJobStatus(jobId: string | null) {
   const qc = useQueryClient();
   const query = useQuery({

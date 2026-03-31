@@ -4,7 +4,6 @@ import { ContentPrismaService } from './prisma/prisma.service';
 import { ContentController } from './presentation/content.controller';
 import { ContentInternalController } from './presentation/content.internal.controller';
 import { ContentService } from './application/content.service';
-import { GeminiAdapter } from './infrastructure/gemini.adapter';
 import { ContentGenerationService } from './application/content-generation.service';
 import { ContentGenerationProcessor } from './processors/content-generation.processor';
 import { QueueEngineModule } from '../queue-engine/queue-engine.module';
@@ -27,7 +26,6 @@ class ContentFactoryBootstrap implements OnApplicationBootstrap {
       useExisting: ContentPrismaService,
     },
     ContentService,
-    GeminiAdapter,
     ContentGenerationService,
     ContentGenerationProcessor,
     ContentFactoryBootstrap,

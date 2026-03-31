@@ -1,5 +1,5 @@
 import { apiClient } from '@core/api/api-client';
-import type { Product, PaginatedResult, ProductStatus } from '@core/api/api.types';
+import type { Product, PaginatedResult, ProductStatus, ProductDNA } from '@core/api/api.types';
 
 export interface ProductFilter {
   page?: number;
@@ -21,6 +21,9 @@ export const productsService = {
 
   updateStatus: (id: string, status: ProductStatus) =>
     apiClient.put<Product>(`/products/${id}/status`, { status }).then((r) => r.data),
+
+  extractDNA: (id: string) =>
+    apiClient.post<{ dna: ProductDNA }>(`/products/${id}/extract-dna`).then((r) => r.data),
 
   delete: (id: string) =>
     apiClient.delete(`/products/${id}`),

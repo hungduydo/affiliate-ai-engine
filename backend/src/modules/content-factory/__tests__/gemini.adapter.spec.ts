@@ -1,4 +1,4 @@
-import { GeminiAdapter } from '../infrastructure/gemini.adapter';
+import { GeminiAdapter } from '../../../shared/ai/gemini.adapter';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createGeneratedContentFixture } from './fixtures/content.fixtures';

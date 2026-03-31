@@ -38,4 +38,7 @@ enum ContentType {
   BLOG_POST
   SOCIAL_POST
   VIDEO_SCRIPT
+  CAROUSEL
+  THREAD
+  HERO_COPY
 }

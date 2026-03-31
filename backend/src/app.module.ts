@@ -8,6 +8,7 @@ import { DistributionHubModule } from './modules/distribution-hub/distribution-h
 import { QueueEngineModule } from './modules/queue-engine/queue-engine.module';
 import { SourceConnectorModule } from './modules/source-connector/source-connector.module';
 import { ConfigModule as ConfigModuleLocal } from './modules/config/config.module';
+import { AiModule } from './shared/ai/ai.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ConfigModule as ConfigModuleLocal } from './modules/config/config.modul
         maxRedirects: 5,
       }),
     }),
+    AiModule,
     QueueEngineModule,
     ConfigModuleLocal,
     ProductManagementModule,

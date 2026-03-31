@@ -6,10 +6,18 @@ export interface PaginatedResult<T> {
   totalPages: number;
 }
 
-export type ProductStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING';
+export type ProductStatus = 'RAW' | 'ENRICHED' | 'ACTIVE' | 'INACTIVE';
 export type EnrichStatus = 'PENDING' | 'ENRICHING' | 'DONE' | 'FAILED' | 'SKIPPED';
 export type Platform = 'WORDPRESS' | 'FACEBOOK' | 'TIKTOK' | 'YOUTUBE' | 'SHOPIFY';
-export type ContentType = 'BLOG_POST' | 'SOCIAL_POST' | 'VIDEO_SCRIPT';
+export type ContentType = 'BLOG_POST' | 'SOCIAL_POST' | 'VIDEO_SCRIPT' | 'CAROUSEL' | 'THREAD' | 'HERO_COPY';
+
+export interface ProductDNA {
+  coreProblem: string;
+  keyFeatures: Array<{ feature: string; emotionalBenefit: string }>;
+  targetPersona: { demographics: string; psychographics: string };
+  objectionHandling: Array<{ objection: string; counter: string }>;
+  visualAnchors: string[];
+}
 export type ContentStatus = 'RAW' | 'AI_PROCESSING' | 'GENERATED' | 'PENDING_APPROVAL' | 'PUBLISHING' | 'PUBLISHED' | 'FAILED';
 export type PublishStatus = 'PENDING' | 'PUBLISHING' | 'PUBLISHED' | 'FAILED';
 export type JobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'RETRYING';
@@ -37,6 +45,8 @@ export interface Product {
   enrichStatus?: EnrichStatus;
   enrichedAt?: string;
   metadata?: ProductMetadata;
+  productDna?: ProductDNA;
+  dnaExtractedAt?: string;
   createdAt: string;
   updatedAt: string;
 }

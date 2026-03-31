@@ -5,7 +5,16 @@ import { settingsService } from '../services/settings.service';
 import type { PromptTemplate, Platform, ContentType } from '@core/api/api.types';
 
 const PLATFORMS: Platform[] = ['WORDPRESS', 'FACEBOOK', 'TIKTOK', 'YOUTUBE', 'SHOPIFY'];
-const CONTENT_TYPES: ContentType[] = ['BLOG_POST', 'SOCIAL_POST', 'VIDEO_SCRIPT'];
+
+const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
+  BLOG_POST: 'Blog Post',
+  SOCIAL_POST: 'Social Post',
+  VIDEO_SCRIPT: 'Video Script',
+  CAROUSEL: 'Carousel (Slides)',
+  THREAD: 'Thread (X / Twitter)',
+  HERO_COPY: 'Hero Copy (Website)',
+};
+const CONTENT_TYPES = Object.keys(CONTENT_TYPE_LABELS) as ContentType[];
 const VARIABLE_HINTS = ['{{name}}', '{{description}}', '{{price}}', '{{commission}}', '{{affiliateLink}}'];
 
 interface Props {
@@ -93,7 +102,7 @@ export function PromptTemplateForm({ template, onClose }: Props) {
                 disabled={isEditing}
                 className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-violet-500 disabled:opacity-50"
               >
-                {CONTENT_TYPES.map((t) => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
+                {CONTENT_TYPES.map((t) => <option key={t} value={t}>{CONTENT_TYPE_LABELS[t]}</option>)}
               </select>
             </div>
           </div>

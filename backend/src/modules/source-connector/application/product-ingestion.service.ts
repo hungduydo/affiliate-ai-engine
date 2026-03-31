@@ -55,7 +55,8 @@ export class ProductIngestionService {
     const products = await adapter.fetchProducts(params.keyword, params.limit);
     this.logger.log(`Fetched ${products.length} products from ${params.source}`);
 
-    return this.saveProducts(products);
+    // Source adapters return enriched data — set initial status to ENRICHED
+    return this.saveProducts(products, 'ENRICHED');
   }
 
   async importCsv(params: {
@@ -65,10 +66,11 @@ export class ProductIngestionService {
   }): Promise<IngestResult> {
     const products = await this.csvImporter.parse(params.filePath, params.mapping, params.source);
     this.logger.log(`Parsed ${products.length} products from CSV`);
-    return this.saveProducts(products);
+    // CSV imports have minimal data — start as RAW
+    return this.saveProducts(products, 'RAW');
   }
 
-  private async saveProducts(products: ScrapedProduct[]): Promise<IngestResult> {
+  private async saveProducts(products: ScrapedProduct[], initialStatus: 'RAW' | 'ENRICHED' = 'RAW'): Promise<IngestResult> {
     let saved = 0;
     let skipped = 0;
     let errors = 0;
@@ -88,6 +90,7 @@ export class ProductIngestionService {
             affiliateLink: product.affiliateLink,
             productLink: product.productLink,
             rawData: product.rawData,
+            status: initialStatus,
           }),
         );
         saved++;
