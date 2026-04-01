@@ -470,3 +470,33 @@ cd frontend && npx tsc --noEmit
 ```
 
 Both must pass clean before any commit.
+
+---
+
+## Documentation Requirements
+
+**When starting backend work (modifying `backend/src`):**
+- **MUST** read `BACKEND.md` first to understand module responsibilities, data flows, and patterns
+- **MUST** update `BACKEND.md` if adding new modules, changes to data flows, or new architecture decisions
+
+**When starting frontend work (modifying `frontend/src`):**
+- **MUST** read `FRONTEND.md` first to understand component structure, state management, and patterns
+- **MUST** update `FRONTEND.md` if adding new page modules, changing state management, or new routing patterns
+
+**When adding/updating significant features:**
+- Update the relevant documentation (`BACKEND.md` or `FRONTEND.md`) with:
+  - What the feature does
+  - When it's used (user flow)
+  - How it's implemented (code patterns, key classes/components)
+  - Any new modules, services, or state management added
+
+Example: Adding product enrichment feature
+- Update `BACKEND.md` — add enrichment service flow in "Source-Connector Module" section
+- Update `FRONTEND.md` — add enrichment button to ProductDetailPage in "Product Module" section
+
+---
+
+## NEVER
+
+- **Never read `node_modules/` folder** — it's auto-generated dependencies, provides no project context, and bloats responses.
+- **Never read `.env` files** — they contain secrets and are not committed. Use `.env.example` for reference instead.
