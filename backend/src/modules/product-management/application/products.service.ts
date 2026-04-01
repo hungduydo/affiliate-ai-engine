@@ -100,7 +100,7 @@ export class ProductsService {
       affiliateLink,
       productLink: dto.productLink ?? null,
       rawData: dto.rawData ?? {},
-      status: (dto as { status?: ProductStatus }).status ?? ProductStatus.RAW,
+      status: ProductStatus.RAW,
       enrichStatus: EnrichStatus.PENDING,
       enrichedAt: null,
       description: dto.description ?? null,

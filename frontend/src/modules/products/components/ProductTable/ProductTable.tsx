@@ -1,7 +1,6 @@
-import { ExternalLink, Trash2, Sparkles, Loader2 } from 'lucide-react';
+import { ExternalLink, Trash2, Sparkles, Loader2, Dna } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { StatusBadge } from '@shared/ui/StatusBadge';
-import { EnrichStatusBadge } from '@shared/ui/EnrichStatusBadge';
 import { formatDate } from '@shared/utils/format';
 import type { Product } from '@core/api/api.types';
 
@@ -26,7 +25,7 @@ export function ProductTable({ products, onDelete, onEnrich, enrichingId }: Prod
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-zinc-700 bg-zinc-800">
-            {['Name', 'Source', 'Commission', 'Status', 'Detail', 'Created', 'Actions'].map((h) => (
+            {['Name', 'Source', 'Commission', 'Status', 'DNA', 'Created', 'Actions'].map((h) => (
               <th key={h} className="px-4 py-3 text-left text-zinc-400 font-medium text-xs uppercase tracking-wide">
                 {h}
               </th>
@@ -59,7 +58,17 @@ export function ProductTable({ products, onDelete, onEnrich, enrichingId }: Prod
                   <StatusBadge status={product.status} />
                 </td>
                 <td className="px-4 py-3">
-                  <EnrichStatusBadge status={product.enrichStatus ?? 'PENDING'} />
+                  {product.productDna ? (
+                    <span
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-violet-500/15 text-violet-400"
+                      title={product.dnaExtractedAt ? `Extracted: ${formatDate(product.dnaExtractedAt)}` : 'DNA extracted'}
+                    >
+                      <Dna size={11} />
+                      Ready
+                    </span>
+                  ) : (
+                    <span className="text-zinc-600">—</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-zinc-500 text-xs">
                   {formatDate(product.createdAt)}
