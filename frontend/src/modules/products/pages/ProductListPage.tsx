@@ -52,8 +52,9 @@ export function ProductListPage() {
         >
           <option value="">All Status</option>
           <option value="ACTIVE">Active</option>
+          <option value="ENRICHED">Enriched</option>
+          <option value="RAW">Raw</option>
           <option value="INACTIVE">Inactive</option>
-          <option value="PENDING">Pending</option>
         </select>
       </div>
 

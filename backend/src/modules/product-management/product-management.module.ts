@@ -4,6 +4,7 @@ import { ProductPrismaService } from './prisma/prisma.service';
 import { ProductsController } from './presentation/products.controller';
 import { ProductsInternalController } from './presentation/products.internal.controller';
 import { ProductsService } from './application/products.service';
+import { ProductDNAService } from './application/product-dna.service';
 import { PrismaProductRepository } from './infrastructure/prisma-product.repository';
 import { DeeplinkGenerator } from './infrastructure/deeplink-generator';
 
@@ -17,6 +18,7 @@ import { DeeplinkGenerator } from './infrastructure/deeplink-generator';
       useExisting: ProductPrismaService,
     },
     ProductsService,
+    ProductDNAService,
     PrismaProductRepository,
     DeeplinkGenerator,
   ],

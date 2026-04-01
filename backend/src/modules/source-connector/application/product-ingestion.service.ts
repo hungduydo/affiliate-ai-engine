@@ -55,6 +55,7 @@ export class ProductIngestionService {
     const products = await adapter.fetchProducts(params.keyword, params.limit);
     this.logger.log(`Fetched ${products.length} products from ${params.source}`);
 
+    // Source adapters return enriched data — set initial status to ENRICHED
     return this.saveProducts(products);
   }
 
@@ -65,6 +66,7 @@ export class ProductIngestionService {
   }): Promise<IngestResult> {
     const products = await this.csvImporter.parse(params.filePath, params.mapping, params.source);
     this.logger.log(`Parsed ${products.length} products from CSV`);
+    // CSV imports have minimal data — start as RAW
     return this.saveProducts(products);
   }
 

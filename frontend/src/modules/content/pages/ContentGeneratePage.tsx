@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Sparkles, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { contentService } from '../services/content.service';
 import { productsService } from '@modules/products/services/products.service';
@@ -8,23 +8,47 @@ import { JobStatusCard } from '@modules/products/components/JobStatusCard';
 import type { Platform, ContentType } from '@core/api/api.types';
 
 const PLATFORMS: Platform[] = ['WORDPRESS', 'FACEBOOK', 'TIKTOK', 'YOUTUBE', 'SHOPIFY'];
-const CONTENT_TYPES: ContentType[] = ['BLOG_POST', 'SOCIAL_POST', 'VIDEO_SCRIPT'];
+
+const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
+  BLOG_POST: 'Blog Post',
+  SOCIAL_POST: 'Social Post',
+  VIDEO_SCRIPT: 'Video Script',
+  CAROUSEL: 'Carousel (Slides)',
+  THREAD: 'Thread (X / Twitter)',
+  HERO_COPY: 'Hero Copy (Website)',
+};
+const CONTENT_TYPES = Object.keys(CONTENT_TYPE_LABELS) as ContentType[];
 
 export function ContentGeneratePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const preselectedProductId = searchParams.get('productId') ?? '';
 
   const [productSearch, setProductSearch] = useState('');
-  const [productId, setProductId] = useState('');
+  const [productId, setProductId] = useState(preselectedProductId);
   const [platform, setPlatform] = useState<Platform>('WORDPRESS');
   const [contentType, setContentType] = useState<ContentType>('BLOG_POST');
   const [jobId, setJobId] = useState<string | null>(null);
   const [contentId, setContentId] = useState<string | null>(null);
 
+  // Load pre-selected product name when navigating from product detail
+  const { data: preselectedProduct } = useQuery({
+    queryKey: ['products', preselectedProductId],
+    queryFn: () => productsService.getById(preselectedProductId),
+    enabled: !!preselectedProductId,
+  });
+
+  useEffect(() => {
+    if (preselectedProduct && !productSearch) {
+      setProductSearch(preselectedProduct.name);
+    }
+  }, [preselectedProduct, productSearch]);
+
   const { data: productsData } = useQuery({
     queryKey: ['products-search', productSearch],
     queryFn: () => productsService.getMany({ search: productSearch, limit: 20 }),
-    enabled: productSearch.length >= 2,
+    enabled: productSearch.length >= 2 && !productId,
   });
 
   // Poll generated content once job completes
@@ -84,7 +108,7 @@ export function ContentGeneratePage() {
             onChange={(e) => { setProductSearch(e.target.value); setProductId(''); }}
             className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
           />
-          {productsData && productsData.data.length > 0 && !productId && (
+          {productsData && productsData.data.length > 0 && !productId && productSearch.length >= 2 && (
             <div className="rounded-md border border-zinc-700 bg-zinc-900 divide-y divide-zinc-800 max-h-40 overflow-y-auto">
               {productsData.data.map((p) => (
                 <button
@@ -124,7 +148,7 @@ export function ContentGeneratePage() {
               onChange={(e) => setContentType(e.target.value as ContentType)}
               className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-violet-500"
             >
-              {CONTENT_TYPES.map((t) => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
+              {CONTENT_TYPES.map((t) => <option key={t} value={t}>{CONTENT_TYPE_LABELS[t]}</option>)}
             </select>
           </div>
         </div>

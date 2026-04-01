@@ -1,6 +1,6 @@
 import { PaginatedResult, PaginationQuery } from '@shared/types/common.types';
 import { ProductEntity } from '../entities/product.entity';
-import { ProductStatus } from '@prisma/client';
+import { ProductStatus } from '@prisma-client/product-management';
 
 export interface ProductFilter extends PaginationQuery {
   source?: string;

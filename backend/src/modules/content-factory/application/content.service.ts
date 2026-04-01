@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ContentPrismaService } from '../prisma/prisma.service';
 import { CreateContentDto, UpdateContentStatusDto } from '../presentation/dto/create-content.dto';
-import { ContentStatus, Platform, ContentType } from '@prisma/client';
+import { ContentStatus, Platform, ContentType } from '@prisma-client/content-factory';
 import { canTransitionContentStatus } from '../domain/value-objects/content-status.vo';
 import { PaginationQuery } from '@shared/types/common.types';
 

@@ -16,6 +16,8 @@ export class ProductEntity {
   declare enrichStatus: EnrichStatus;
   declare enrichedAt: Date | null;
   declare metadata: Record<string, unknown> | null;
+  declare productDna: Record<string, unknown> | null;
+  declare dnaExtractedAt: Date | null;
   declare createdAt: Date;
   declare updatedAt: Date;
 }

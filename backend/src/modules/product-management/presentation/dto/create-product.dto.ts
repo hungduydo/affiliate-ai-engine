@@ -1,6 +1,6 @@
 import { IsString, IsOptional, IsNumber, IsUrl, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProductStatus } from '@prisma/client';
+import { ProductStatus } from '@prisma-client/product-management';
 
 export class CreateProductDto {
   @ApiProperty({ example: 'CB12345' })

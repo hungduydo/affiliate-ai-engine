@@ -3,6 +3,13 @@ import * as fs from 'fs';
 import { parse } from 'csv-parse';
 import { ScrapedProduct } from '../../domain/adapters/source.adapter.interface';
 
+// Handles Vietnamese number formats: "7,8k" → 7800, "₫7.020" → 7020, "90%" → 90
+function parseVietnameseNumber(value: string): number {
+  const cleaned = value.replace(/[₫đ%\s]/g, '').replace(/\./g, '').replace(',', '.');
+  const multiplier = /k$/i.test(cleaned) ? 1000 : 1;
+  return parseFloat(cleaned.replace(/k$/i, '')) * multiplier;
+}
+
 // Maps CSV header → ScrapedProduct field name
 export type CsvFieldMapping = Record<string, keyof ScrapedProduct>;
 
@@ -50,7 +57,7 @@ export class CsvImporter {
       if (!value) continue;
 
       if (field === 'price' || field === 'commission') {
-        const num = parseFloat(value);
+        const num = parseVietnameseNumber(value);
         if (!isNaN(num)) result[field] = num;
       } else if (field !== 'rawData' && field !== 'source') {
         (result as Record<string, unknown>)[field] = value;
