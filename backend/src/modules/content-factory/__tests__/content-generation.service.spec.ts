@@ -29,6 +29,7 @@ describe('ContentGenerationService', () => {
 
     gemini = {
       generate: jest.fn(),
+      generateWithDNA: jest.fn(),
     } as unknown as jest.Mocked<GeminiAdapter>;
 
     http = {
@@ -370,6 +371,134 @@ describe('ContentGenerationService', () => {
       const updateCalls = (prisma.content.update as jest.Mock).mock.calls;
       const lastCall = updateCalls[updateCalls.length - 1][0];
       expect(lastCall.data.status).toBe(ContentStatus.GENERATED);
+    });
+  });
+
+  // --- Test 6: Generate content for an ACTIVE product → uses DNA for richer output ---
+
+  describe('generate() with ProductDNA', () => {
+    const contentId = 'content-123';
+    const productId = 'prod-123';
+    const dna = {
+      coreProblem: 'Struggling to lose weight',
+      keyFeatures: [{ feature: 'Natural formula', emotionalBenefit: 'Feel safe' }],
+      targetPersona: { demographics: 'Adults 25-45', psychographics: 'Health-conscious' },
+      objectionHandling: [{ objection: 'Too expensive', counter: 'Worth every penny' }],
+      visualAnchors: ['before/after photos'],
+    };
+    const productWithDna = createProductFixture({
+      id: productId,
+      status: 'ACTIVE',
+      productDna: dna,
+      dnaExtractedAt: new Date(),
+    });
+    const prompt = createPromptFixture();
+    const richContent = createGeneratedContentFixture({
+      title: 'DNA-enhanced Title',
+      body: 'Richer body leveraging DNA context',
+    });
+
+    it('should call generateWithDNA when product has DNA', async () => {
+      // Arrange
+      const content = createContentFixture({ id: contentId, productId });
+      prisma.content.findUnique.mockResolvedValue(content as any);
+      http.get.mockImplementation((url: string) => {
+        if (url.includes('products')) return of({ data: productWithDna } as any);
+        return of({ data: { data: [prompt] } } as any);
+      });
+      (gemini.generateWithDNA as jest.Mock).mockResolvedValue(richContent);
+
+      // Act
+      await service.generate(contentId);
+
+      // Assert
+      expect(gemini.generateWithDNA).toHaveBeenCalledWith(
+        expect.any(String),
+        dna,
+      );
+      expect(gemini.generate).not.toHaveBeenCalled();
+    });
+
+    it('should call plain generate when product has no DNA', async () => {
+      // Arrange
+      const productNoDna = createProductFixture({ id: productId, productDna: null });
+      const content = createContentFixture({ id: contentId, productId });
+      prisma.content.findUnique.mockResolvedValue(content as any);
+      http.get.mockImplementation((url: string) => {
+        if (url.includes('products')) return of({ data: productNoDna } as any);
+        return of({ data: { data: [prompt] } } as any);
+      });
+      (gemini.generate as jest.Mock).mockResolvedValue(richContent);
+
+      // Act
+      await service.generate(contentId);
+
+      // Assert
+      expect(gemini.generate).toHaveBeenCalled();
+      expect(gemini.generateWithDNA).not.toHaveBeenCalled();
+    });
+
+    it('should save DNA-generated title and body to content', async () => {
+      // Arrange
+      const content = createContentFixture({ id: contentId, productId });
+      prisma.content.findUnique.mockResolvedValue(content as any);
+      http.get.mockImplementation((url: string) => {
+        if (url.includes('products')) return of({ data: productWithDna } as any);
+        return of({ data: { data: [prompt] } } as any);
+      });
+      (gemini.generateWithDNA as jest.Mock).mockResolvedValue(richContent);
+
+      // Act
+      await service.generate(contentId);
+
+      // Assert
+      const updateCalls = (prisma.content.update as jest.Mock).mock.calls;
+      const finalUpdate = updateCalls[updateCalls.length - 1][0];
+      expect(finalUpdate.data).toEqual({
+        title: richContent.title,
+        body: richContent.body,
+        status: ContentStatus.GENERATED,
+      });
+    });
+
+    it('should pass the DNA object directly to generateWithDNA', async () => {
+      // Arrange
+      const content = createContentFixture({ id: contentId, productId });
+      prisma.content.findUnique.mockResolvedValue(content as any);
+      http.get.mockImplementation((url: string) => {
+        if (url.includes('products')) return of({ data: productWithDna } as any);
+        return of({ data: { data: [prompt] } } as any);
+      });
+      (gemini.generateWithDNA as jest.Mock).mockResolvedValue(richContent);
+
+      // Act
+      await service.generate(contentId);
+
+      // Assert — the exact DNA object is forwarded, not a copy
+      const [, passedDna] = (gemini.generateWithDNA as jest.Mock).mock.calls[0];
+      expect(passedDna).toEqual(dna);
+      expect(passedDna).toHaveProperty('coreProblem');
+      expect(passedDna).toHaveProperty('keyFeatures');
+      expect(passedDna).toHaveProperty('targetPersona');
+      expect(passedDna).toHaveProperty('objectionHandling');
+      expect(passedDna).toHaveProperty('visualAnchors');
+    });
+
+    it('should mark content as FAILED if generateWithDNA throws', async () => {
+      // Arrange
+      const content = createContentFixture({ id: contentId, productId });
+      prisma.content.findUnique.mockResolvedValue(content as any);
+      http.get.mockImplementation((url: string) => {
+        if (url.includes('products')) return of({ data: productWithDna } as any);
+        return of({ data: { data: [prompt] } } as any);
+      });
+      (gemini.generateWithDNA as jest.Mock).mockRejectedValue(new Error('AI error'));
+
+      // Act & Assert
+      await expect(service.generate(contentId)).rejects.toThrow('AI error');
+      const failCalls = (prisma.content.update as jest.Mock).mock.calls;
+      const lastUpdate = failCalls[failCalls.length - 1][0];
+      expect(lastUpdate.data.status).toBe(ContentStatus.FAILED);
     });
   });
 

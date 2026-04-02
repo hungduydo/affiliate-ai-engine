@@ -81,7 +81,8 @@ export class ProductEnrichmentService {
     try {
       const detail = await fetcher.fetchDetail(productLink, externalId);
       if (!detail) {
-        await this.patchEnrichStatus(productId, 'FAILED');
+        // Revert to PENDING so the product can be retried — do not mark as FAILED
+        await this.patchEnrichStatus(productId, 'PENDING');
         return { status: 'error', error: 'No detail data intercepted' };
       }
 
@@ -97,7 +98,8 @@ export class ProductEnrichmentService {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       this.logger.error(`Failed to enrich product ${productId}: ${message}`);
-      await this.patchEnrichStatus(productId, 'FAILED');
+      // Revert to PENDING so the product can be retried — do not mark as FAILED
+      await this.patchEnrichStatus(productId, 'PENDING');
       return { status: 'error', error: message };
     }
   }

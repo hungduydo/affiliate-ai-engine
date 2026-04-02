@@ -49,6 +49,14 @@ export function useEnrichProduct() {
   });
 }
 
+export function useEnrichBatch() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (productIds: string[]) => importService.enrichBatch(productIds),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [PRODUCTS_KEY] }),
+  });
+}
+
 export function useExtractProductDNA() {
   const qc = useQueryClient();
   return useMutation({

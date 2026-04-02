@@ -7,7 +7,7 @@ import {
 import { useProduct, useEnrichProduct, useEnrichmentJobStatus, useExtractProductDNA } from '../hooks/useProducts';
 import { StatusBadge } from '@shared/ui/StatusBadge';
 import { EnrichStatusBadge } from '@shared/ui/EnrichStatusBadge';
-import { formatDate, formatCurrency } from '@shared/utils/format';
+import { formatDate, formatProductPrice } from '@shared/utils/format';
 import type { ProductDNA } from '@core/api/api.types';
 
 export function ProductDetailPage() {
@@ -199,7 +199,7 @@ export function ProductDetailPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {[
             { label: 'Source', value: product.source },
-            { label: 'Price', value: product.price != null ? formatCurrency(product.price) : '—' },
+            { label: 'Price', value: product.price != null ? formatProductPrice(product.price, product.source) : '—' },
             { label: 'Commission', value: product.commission != null ? `${product.commission}%` : '—' },
             ...(rating != null ? [{ label: 'Rating', value: (
               <span className="flex items-center gap-1">
@@ -276,7 +276,7 @@ export function ProductDetailPage() {
               <div>
                 <p className="text-zinc-500 text-xs uppercase tracking-wide mb-2">Key Features</p>
                 <div className="space-y-2">
-                  {dna.keyFeatures.map((f, i) => (
+                  {(dna.keyFeatures ?? []).map((f, i) => (
                     <div key={i} className="bg-zinc-900 rounded-md px-3 py-2">
                       <p className="text-violet-300 text-xs font-medium">{f.feature}</p>
                       <p className="text-zinc-400 text-xs mt-0.5">{f.emotionalBenefit}</p>
@@ -304,7 +304,7 @@ export function ProductDetailPage() {
               <div>
                 <p className="text-zinc-500 text-xs uppercase tracking-wide mb-2">Objection Handling</p>
                 <div className="space-y-2">
-                  {dna.objectionHandling.map((o, i) => (
+                  {(dna.objectionHandling ?? []).map((o, i) => (
                     <div key={i} className="bg-zinc-900 rounded-md px-3 py-2">
                       <p className="text-red-400 text-xs font-medium">❌ {o.objection}</p>
                       <p className="text-green-400 text-xs mt-1">✓ {o.counter}</p>
@@ -317,7 +317,7 @@ export function ProductDetailPage() {
               <div>
                 <p className="text-zinc-500 text-xs uppercase tracking-wide mb-2">Visual Anchors</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {dna.visualAnchors.map((anchor, i) => (
+                  {(dna.visualAnchors ?? []).map((anchor, i) => (
                     <span key={i} className="px-2 py-0.5 bg-violet-900/40 border border-violet-700/40 text-violet-300 text-xs rounded">
                       {anchor}
                     </span>

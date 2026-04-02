@@ -125,13 +125,18 @@ export class ProductsService {
     if (dto.reviewCount != null) updatedMeta.reviewCount = dto.reviewCount;
     if (dto.categories?.length) updatedMeta.categories = dto.categories;
 
+    const isSuccess = dto.enrichStatus === EnrichStatus.DONE;
+    const shouldPromoteToEnriched = isSuccess && product.status === ProductStatus.RAW;
+
     return this.productRepo.update(id, {
       ...(dto.description && !product.description ? { description: dto.description } : {}),
       ...(dto.primaryImageUrl && !product.imageUrl ? { imageUrl: dto.primaryImageUrl } : {}),
       ...(dto.price != null && product.price == null ? { price: dto.price } : {}),
       metadata: updatedMeta,
-      enrichedAt: new Date(),
+      // Only stamp enrichedAt on a successful enrichment
+      ...(isSuccess ? { enrichedAt: new Date() } : {}),
       ...(dto.enrichStatus ? { enrichStatus: dto.enrichStatus } : {}),
+      ...(shouldPromoteToEnriched ? { status: ProductStatus.ENRICHED } : {}),
     });
   }
 

@@ -6,7 +6,8 @@ import { PublishPrismaService } from '../prisma/prisma.service';
 import { WordPressAdapter } from '../infrastructure/wordpress.adapter';
 import { FacebookAdapter } from '../infrastructure/facebook.adapter';
 import { ShopifyAdapter } from '../infrastructure/shopify.adapter';
-import { PublishStatus, Platform } from '@prisma/client';
+import { BufferAdapter } from '../infrastructure/buffer.adapter';
+import { PublishStatus, Platform } from '@prisma-client/distribution-hub';
 import { PublishPayload } from '../domain/adapters/publisher.adapter.interface';
 
 interface ContentData {
@@ -28,6 +29,7 @@ export class PublishContentService {
     private readonly wordPressAdapter: WordPressAdapter,
     private readonly facebookAdapter: FacebookAdapter,
     private readonly shopifyAdapter: ShopifyAdapter,
+    private readonly bufferAdapter: BufferAdapter,
     private readonly http: HttpService,
     config: ConfigService,
   ) {
@@ -60,7 +62,10 @@ export class PublishContentService {
 
       // 4. Route to adapter
       const adapter = this.getAdapter(log.platform);
-      const result = await adapter.publish(payload);
+      const targetPlatform = String(log.platform).startsWith('BUFFER_')
+        ? String(log.platform).replace('BUFFER_', '').toLowerCase()
+        : undefined;
+      const result = await adapter.publish(payload, targetPlatform);
 
       if (result.success) {
         // 5a. Mark log as published
@@ -103,6 +108,16 @@ export class PublishContentService {
         return this.facebookAdapter;
       case Platform.SHOPIFY:
         return this.shopifyAdapter;
+      case Platform.BUFFER_TWITTER:
+      case Platform.BUFFER_INSTAGRAM:
+      case Platform.BUFFER_LINKEDIN:
+      case Platform.BUFFER_TIKTOK:
+      case Platform.BUFFER_PINTEREST:
+      case Platform.BUFFER_FACEBOOK:
+      case Platform.BUFFER_YOUTUBE:
+      case Platform.BUFFER_MASTODON:
+      case Platform.BUFFER_THREADS:
+        return this.bufferAdapter;
       default:
         throw new Error(`No adapter available for platform: ${platform}`);
     }

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Patch, Param, Query, Body } from '@nestjs/common
 import { ProductsService } from '../application/products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { EnrichProductDto } from './dto/enrich-product.dto';
+import { EnrichStatus } from '@prisma-client/product-management';
 
 /**
  * Internal API for other modules to fetch product data

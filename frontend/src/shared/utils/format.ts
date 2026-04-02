@@ -9,6 +9,16 @@ export function formatCurrency(value: number, currency = 'USD'): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
 }
 
+const SOURCE_CURRENCY: Record<string, string> = {
+  SHOPEE: 'VND',
+  LAZADA: 'VND',
+};
+
+export function formatProductPrice(value: number, source: string): string {
+  const currency = SOURCE_CURRENCY[source.toUpperCase()] ?? 'USD';
+  return formatCurrency(value, currency);
+}
+
 export function formatPercent(value: number): string {
   return `${value.toFixed(1)}%`;
 }

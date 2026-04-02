@@ -53,7 +53,8 @@ export class SourceController {
   @Post('enrich-batch')
   @ApiOperation({ summary: 'Enqueue detail enrichment jobs for multiple products (staggered)' })
   async enrichBatch(@Body() dto: EnrichBatchDto) {
-    const items = await Promise.all(
+    // Use allSettled so one bad product ID doesn't abort the whole batch
+    const results = await Promise.allSettled(
       dto.productIds.map(async (id) => {
         const p = await this.fetchProduct(id);
         return {
@@ -64,6 +65,11 @@ export class SourceController {
         };
       }),
     );
+
+    const items = results
+      .filter((r): r is PromiseFulfilledResult<{ productId: string; productLink: string; externalId: string; source: string }> => r.status === 'fulfilled')
+      .map((r) => r.value);
+
     const jobIds = await this.enrichmentService.enqueueBatch(items);
     return { jobIds, count: jobIds.length, status: 'queued' };
   }

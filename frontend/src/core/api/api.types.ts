@@ -8,7 +8,21 @@ export interface PaginatedResult<T> {
 
 export type ProductStatus = 'RAW' | 'ENRICHED' | 'ACTIVE' | 'INACTIVE';
 export type EnrichStatus = 'PENDING' | 'ENRICHING' | 'DONE' | 'FAILED' | 'SKIPPED';
-export type Platform = 'WORDPRESS' | 'FACEBOOK' | 'TIKTOK' | 'YOUTUBE' | 'SHOPIFY';
+export type Platform =
+  | 'WORDPRESS'
+  | 'FACEBOOK'
+  | 'TIKTOK'
+  | 'YOUTUBE'
+  | 'SHOPIFY'
+  | 'BUFFER_TWITTER'
+  | 'BUFFER_INSTAGRAM'
+  | 'BUFFER_LINKEDIN'
+  | 'BUFFER_TIKTOK'
+  | 'BUFFER_PINTEREST'
+  | 'BUFFER_FACEBOOK'
+  | 'BUFFER_YOUTUBE'
+  | 'BUFFER_MASTODON'
+  | 'BUFFER_THREADS';
 export type ContentType = 'BLOG_POST' | 'SOCIAL_POST' | 'VIDEO_SCRIPT' | 'CAROUSEL' | 'THREAD' | 'HERO_COPY';
 
 export interface ProductDNA {

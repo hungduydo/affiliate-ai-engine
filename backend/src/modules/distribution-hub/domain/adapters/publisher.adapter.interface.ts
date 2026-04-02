@@ -16,6 +16,6 @@ export const FACEBOOK_ADAPTER = Symbol('FACEBOOK_ADAPTER');
 
 export interface IPublisherAdapter {
   platform: string;
-  publish(payload: PublishPayload): Promise<PublishResult>;
+  publish(payload: PublishPayload, targetPlatform?: string): Promise<PublishResult>;
   isConfigured(): boolean;
 }

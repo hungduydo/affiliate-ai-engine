@@ -2,7 +2,7 @@ import { cn } from '@shared/utils/cn';
 
 type Status =
   | 'ACTIVE' | 'INACTIVE' | 'PENDING'
-  | 'RAW' | 'AI_PROCESSING' | 'GENERATED' | 'PENDING_APPROVAL' | 'PUBLISHING' | 'PUBLISHED' | 'FAILED'
+  | 'RAW' | 'ENRICHED' | 'AI_PROCESSING' | 'GENERATED' | 'PENDING_APPROVAL' | 'PUBLISHING' | 'PUBLISHED' | 'FAILED'
   | 'COMPLETED' | 'PROCESSING' | 'RETRYING';
 
 const STATUS_STYLES: Record<Status, string> = {
@@ -10,6 +10,7 @@ const STATUS_STYLES: Record<Status, string> = {
   INACTIVE: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
   PENDING: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
   RAW: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
+  ENRICHED: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
   AI_PROCESSING: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
   GENERATED: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
   PENDING_APPROVAL: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',

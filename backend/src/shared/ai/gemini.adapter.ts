@@ -39,8 +39,24 @@ Output ONLY valid JSON matching this exact structure:
 
     try {
       const cleaned = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
-      const parsed = JSON.parse(cleaned) as ProductDNA;
-      return parsed;
+      const raw = JSON.parse(cleaned) as Record<string, unknown>;
+
+      // AI occasionally nests visualAnchors/objectionHandling inside targetPersona
+      // instead of at the top level — normalize to the expected shape.
+      const persona = (raw.targetPersona ?? {}) as Record<string, unknown>;
+      const dna: ProductDNA = {
+        coreProblem: raw.coreProblem as string,
+        keyFeatures: (raw.keyFeatures ?? []) as ProductDNA['keyFeatures'],
+        targetPersona: {
+          demographics: persona.demographics as string,
+          psychographics: persona.psychographics as string,
+        },
+        objectionHandling: (
+          raw.objectionHandling ?? persona.objectionHandling ?? []
+        ) as ProductDNA['objectionHandling'],
+        visualAnchors: (raw.visualAnchors ?? persona.visualAnchors ?? []) as string[],
+      };
+      return dna;
     } catch {
       this.logger.error('Failed to parse Product DNA response', text);
       throw new Error('AI returned invalid JSON for Product DNA extraction');
