@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { Sparkles, Plug } from 'lucide-react';
+import { Sparkles, Plug, Send } from 'lucide-react';
 import { PromptTemplateTable } from '../components/PromptTemplateTable';
 import { ConnectorStatus } from '../components/ConnectorStatus';
+import { ProviderTable } from '../components/ProviderTable';
 
-type Tab = 'prompts' | 'connectors';
+type Tab = 'prompts' | 'connectors' | 'providers';
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'prompts', label: 'Prompt Templates', icon: <Sparkles className="h-4 w-4" /> },
   { id: 'connectors', label: 'Connectors', icon: <Plug className="h-4 w-4" /> },
+  { id: 'providers', label: 'Publishing Providers', icon: <Send className="h-4 w-4" /> },
 ];
 
 export function SettingsPage() {
@@ -17,7 +19,7 @@ export function SettingsPage() {
     <div className="space-y-5">
       <div>
         <h2 className="text-white text-xl font-semibold">Settings</h2>
-        <p className="text-zinc-400 text-sm mt-1">Manage prompt templates and connector credentials</p>
+        <p className="text-zinc-400 text-sm mt-1">Manage prompt templates, connector credentials, and publishing providers</p>
       </div>
 
       {/* Tabs */}
@@ -51,6 +53,7 @@ export function SettingsPage() {
             <ConnectorStatus />
           </div>
         )}
+        {tab === 'providers' && <ProviderTable />}
       </div>
     </div>
   );

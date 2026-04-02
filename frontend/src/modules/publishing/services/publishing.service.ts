@@ -1,9 +1,12 @@
 import { apiClient } from '@core/api/api-client';
-import type { PublishLog, PaginatedResult, Platform, PublishStatus } from '@core/api/api.types';
+import type { PublishLog, PublishAsset, PaginatedResult, Platform, PublishStatus, ProviderInfo } from '@core/api/api.types';
 
 export interface PublishRequest {
   contentId: string;
-  platform: Platform;
+  platform: string;
+  providerId: string;
+  scheduledAt?: string;   // ISO 8601 UTC — null/omit to publish now
+  assets?: PublishAsset[];
 }
 
 export interface PublishResponse {
@@ -20,4 +23,7 @@ export const publishingService = {
 
   publish: (data: PublishRequest): Promise<PublishResponse> =>
     apiClient.post<PublishResponse>('/publishing/publish', data).then((r) => r.data),
+
+  getProviders: (platform: string): Promise<ProviderInfo[]> =>
+    apiClient.get<{ data: ProviderInfo[] }>('/publishing/providers', { params: { platform } }).then((r) => r.data.data),
 };

@@ -1,9 +1,9 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import {
   IPublisherAdapter,
+  ProviderCredentials,
   PublishPayload,
   PublishResult,
 } from '../domain/adapters/publisher.adapter.interface';
@@ -17,6 +17,14 @@ interface BufferChannel {
 interface BufferGraphQLResponse<T> {
   data: T;
   errors?: { message: string }[];
+}
+
+// Buffer scheduling mode — kept here for internal use
+type BufferMode = 'shareNow' | 'addToQueue' | 'customScheduled';
+
+interface BufferPlatformOptions {
+  mode?: BufferMode;
+  dueAt?: string; // ISO 8601 UTC — required when mode is 'customScheduled'
 }
 
 const BUFFER_API_URL = 'https://api.buffer.com';
@@ -37,62 +45,41 @@ const PLATFORM_CONSTRAINTS: Record<
 };
 
 @Injectable()
-export class BufferAdapter implements IPublisherAdapter, OnModuleInit {
-  readonly platform = 'BUFFER';
+export class BufferAdapter implements IPublisherAdapter {
+  readonly providerKey = 'BUFFER';
   private readonly logger = new Logger(BufferAdapter.name);
-  private readonly channels = new Map<string, string>(); // service → channelId
 
-  constructor(
-    private readonly http: HttpService,
-    private readonly config: ConfigService,
-  ) {}
+  constructor(private readonly http: HttpService) {}
 
-  async onModuleInit(): Promise<void> {
-    if (!this.isConfigured()) return;
+  isConfigured(credentials: ProviderCredentials): boolean {
+    return !!(credentials.apiToken && credentials.organizationId);
+  }
+
+  async publish(payload: PublishPayload, platform: string, credentials: ProviderCredentials): Promise<PublishResult> {
+    if (!this.isConfigured(credentials)) {
+      return { success: false, errorMessage: 'Buffer credentials not configured (apiToken + organizationId required)' };
+    }
+
+    const service = platform.toLowerCase();
+    const apiToken = credentials.apiToken!;
+    const organizationId = credentials.organizationId!;
+
+    // Load channels lazily per call
+    let channelId: string | undefined;
     try {
-      await this.loadChannels();
+      channelId = await this.loadChannelId(service, apiToken, organizationId);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      this.logger.error(`Failed to load Buffer channels on startup: ${msg}`);
+      return { success: false, errorMessage: `Failed to load Buffer channels: ${msg}` };
     }
-  }
-
-  isConfigured(): boolean {
-    return !!(
-      this.config.get('BUFFER_API_TOKEN') &&
-      this.config.get('BUFFER_ORGANIZATION_ID')
-    );
-  }
-
-  async publish(payload: PublishPayload, targetPlatform?: string): Promise<PublishResult> {
-    if (!this.isConfigured()) {
-      return { success: false, errorMessage: 'Buffer credentials not configured' };
-    }
-
-    if (!targetPlatform) {
-      return { success: false, errorMessage: 'Buffer adapter requires targetPlatform' };
-    }
-
-    const service = targetPlatform.toLowerCase();
-    const channelId = this.channels.get(service);
 
     if (!channelId) {
-      // Attempt lazy reload in case channels failed at startup
-      try {
-        await this.loadChannels();
-      } catch {
-        // ignore, will fail below
-      }
-      const retried = this.channels.get(service);
-      if (!retried) {
-        return {
-          success: false,
-          errorMessage: `No Buffer channel found for platform: ${service}. Ensure the channel is connected in your Buffer account.`,
-        };
-      }
+      return {
+        success: false,
+        errorMessage: `No Buffer channel found for platform: ${service}. Ensure the channel is connected in your Buffer account.`,
+      };
     }
 
-    const finalChannelId = this.channels.get(service)!;
     const constraints = PLATFORM_CONSTRAINTS[service];
 
     // Fail loudly if image is required but missing
@@ -100,19 +87,28 @@ export class BufferAdapter implements IPublisherAdapter, OnModuleInit {
       return { success: false, errorMessage: `${service} requires an image to publish` };
     }
 
+    const bufferOptions = (payload.platformOptions ?? {}) as BufferPlatformOptions;
     const text = this.buildText(payload, service, constraints);
-    const token = this.config.getOrThrow<string>('BUFFER_API_TOKEN');
+    const metadata = this.buildMetadata(service);
+    const { schedulingType, mode, dueAt } = this.buildScheduling(bufferOptions.mode, bufferOptions.dueAt);
 
     const mutation = `
-      mutation CreatePost($text: String!, $channelId: String!) {
+      mutation CreatePost {
         createPost(input: {
-          text: $text
-          channelId: $channelId
-          schedulingType: automatic
-          mode: addToQueue
+          text: ${JSON.stringify(text)}
+          channelId: ${JSON.stringify(channelId)}
+          schedulingType: ${schedulingType}
+          mode: ${mode}
+          ${dueAt ? `dueAt: ${JSON.stringify(dueAt)}` : ''}
+          ${metadata ? `metadata: ${metadata}` : ''}
         }) {
-          post {
-            id
+          ... on PostActionSuccess {
+            post {
+              id
+            }
+          }
+          ... on MutationError {
+            message
           }
         }
       }
@@ -120,12 +116,12 @@ export class BufferAdapter implements IPublisherAdapter, OnModuleInit {
 
     try {
       const response = await firstValueFrom(
-        this.http.post<BufferGraphQLResponse<{ createPost: { post: { id: string } } }>>(
+        this.http.post<BufferGraphQLResponse<{ createPost: { post?: { id: string }; message?: string } }>>(
           BUFFER_API_URL,
-          { query: mutation, variables: { text, channelId: finalChannelId } },
+          { query: mutation },
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${apiToken}`,
               'Content-Type': 'application/json',
             },
           },
@@ -138,7 +134,13 @@ export class BufferAdapter implements IPublisherAdapter, OnModuleInit {
         return { success: false, errorMessage: msg };
       }
 
-      const postId = response.data.data.createPost.post.id;
+      const result = response.data.data.createPost;
+      if (result.message) {
+        this.logger.error(`Buffer mutation error for ${service}: ${result.message}`);
+        return { success: false, errorMessage: result.message };
+      }
+
+      const postId = result.post!.id;
       const publishedLink = `https://publish.buffer.com/posts/${postId}`;
       this.logger.log(`Queued on Buffer/${service}: ${publishedLink}`);
       return { success: true, publishedLink };
@@ -146,6 +148,64 @@ export class BufferAdapter implements IPublisherAdapter, OnModuleInit {
       const message = err instanceof Error ? err.message : String(err);
       this.logger.error(`Buffer publish failed for ${service}: ${message}`);
       return { success: false, errorMessage: message };
+    }
+  }
+
+  private async loadChannelId(service: string, apiToken: string, organizationId: string): Promise<string | undefined> {
+    const query = `
+      query GetChannels {
+        channels(input: { organizationId: ${JSON.stringify(organizationId)} }) {
+          id
+          name
+          service
+        }
+      }
+    `;
+
+    const response = await firstValueFrom(
+      this.http.post<BufferGraphQLResponse<{ channels: BufferChannel[] }>>(
+        BUFFER_API_URL,
+        { query },
+        {
+          headers: {
+            Authorization: `Bearer ${apiToken}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      ),
+    );
+
+    if (response.data.errors?.length) {
+      throw new Error(response.data.errors.map((e) => e.message).join('; '));
+    }
+
+    const channel = response.data.data.channels.find(
+      (c) => c.service.toLowerCase() === service,
+    );
+    return channel?.id;
+  }
+
+  private buildScheduling(
+    mode: BufferMode | undefined,
+    dueAt: string | undefined,
+  ): { schedulingType: string; mode: string; dueAt: string | null } {
+    switch (mode) {
+      case 'shareNow':
+        return { schedulingType: 'automatic', mode: 'shareNow', dueAt: null };
+      case 'customScheduled':
+        return { schedulingType: 'custom', mode: 'customScheduled', dueAt: dueAt ?? null };
+      case 'addToQueue':
+      default:
+        return { schedulingType: 'automatic', mode: 'addToQueue', dueAt: null };
+    }
+  }
+
+  private buildMetadata(service: string): string | null {
+    switch (service) {
+      case 'facebook':
+        return '{ facebook: { type: post } }';
+      default:
+        return null;
     }
   }
 
@@ -166,46 +226,5 @@ export class BufferAdapter implements IPublisherAdapter, OnModuleInit {
     }
 
     return text;
-  }
-
-  private async loadChannels(): Promise<void> {
-    const token = this.config.getOrThrow<string>('BUFFER_API_TOKEN');
-    const orgId = this.config.getOrThrow<string>('BUFFER_ORGANIZATION_ID');
-
-    const query = `
-      query GetChannels($organizationId: String!) {
-        channels(input: { organizationId: $organizationId }) {
-          id
-          name
-          service
-        }
-      }
-    `;
-
-    const response = await firstValueFrom(
-      this.http.post<BufferGraphQLResponse<{ channels: BufferChannel[] }>>(
-        BUFFER_API_URL,
-        { query, variables: { organizationId: orgId } },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        },
-      ),
-    );
-
-    if (response.data.errors?.length) {
-      throw new Error(response.data.errors.map((e) => e.message).join('; '));
-    }
-
-    this.channels.clear();
-    for (const channel of response.data.data.channels) {
-      this.channels.set(channel.service.toLowerCase(), channel.id);
-    }
-
-    this.logger.log(
-      `Buffer channels loaded: ${[...this.channels.keys()].join(', ')}`,
-    );
   }
 }

@@ -17,17 +17,17 @@ export class PublishingInternalController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ) {
-    return await this.publishingService.getPublishLogs({
+    return await this.publishingService.findLogs({
       contentId,
-      status,
-      platform,
+      status: status as any,
+      platform: platform as any,
       page: parseInt(page || '1'),
-      pageSize: parseInt(pageSize || '10'),
+      limit: parseInt(pageSize || '10'),
     });
   }
 
   @Get(':id')
   async getPublishLogById(@Param('id') id: string) {
-    return await this.publishingService.getPublishLogById(id);
+    return await this.publishingService.findLogById(id);
   }
 }

@@ -14,10 +14,16 @@ model PublishLog {
   id            String        @id @default(cuid())
   contentId     String // NO FOREIGN KEY — stored as reference only
   platform      Platform
+  provider      String?       // provider key: 'BUFFER' | 'PUBLER' | 'DIRECT' — null for legacy rows
+  providerId    String?       // PublishProvider.id — used to load credentials at publish time; null for legacy rows
   publishedLink String?
   status        PublishStatus @default(PENDING)
   errorMessage  String?
   publishedAt   DateTime?
+  scheduledAt   DateTime?     // null = publish now; BullMQ delay owns scheduling
+  assets        Json?         // PublishAsset[]
+  bufferMode    String?       // legacy — kept for existing rows
+  bufferDueAt   DateTime?     // legacy — kept for existing rows
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
@@ -29,10 +35,17 @@ model PublishLog {
 
 enum Platform {
   WORDPRESS
+  SHOPIFY
   FACEBOOK
+  INSTAGRAM
+  TWITTER
+  LINKEDIN
   TIKTOK
   YOUTUBE
-  SHOPIFY
+  PINTEREST
+  MASTODON
+  THREADS
+  // Deprecated — retained for existing rows; not used for new publish logs
   BUFFER_TWITTER
   BUFFER_INSTAGRAM
   BUFFER_LINKEDIN
@@ -46,6 +59,7 @@ enum Platform {
 
 enum PublishStatus {
   PENDING
+  SCHEDULED
   PUBLISHING
   PUBLISHED
   FAILED

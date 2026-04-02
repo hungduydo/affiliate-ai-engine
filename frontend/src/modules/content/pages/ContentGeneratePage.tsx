@@ -5,9 +5,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { contentService } from '../services/content.service';
 import { productsService } from '@modules/products/services/products.service';
 import { JobStatusCard } from '@modules/products/components/JobStatusCard';
+import { PLATFORMS, PLATFORM_LABELS } from '@core/api/api.types';
 import type { Platform, ContentType } from '@core/api/api.types';
-
-const PLATFORMS: Platform[] = ['WORDPRESS', 'FACEBOOK', 'TIKTOK', 'YOUTUBE', 'SHOPIFY'];
 
 const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
   BLOG_POST: 'Blog Post',
@@ -137,7 +136,7 @@ export function ContentGeneratePage() {
               onChange={(e) => setPlatform(e.target.value as Platform)}
               className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-violet-500"
             >
-              {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
+              {PLATFORMS.map((p) => <option key={p} value={p}>{PLATFORM_LABELS[p]}</option>)}
             </select>
           </div>
 

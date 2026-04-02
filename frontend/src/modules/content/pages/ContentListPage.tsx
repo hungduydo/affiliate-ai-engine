@@ -6,13 +6,12 @@ import { useContent } from '../hooks/useContent';
 import { contentService } from '../services/content.service';
 import { StatusBadge } from '@shared/ui/StatusBadge';
 import { formatDate } from '@shared/utils/format';
+import { PLATFORMS, PLATFORM_LABELS } from '@core/api/api.types';
 import type { Content, ContentStatus, Platform } from '@core/api/api.types';
 
 const CONTENT_STATUS_FLOW: ContentStatus[] = [
   'RAW', 'AI_PROCESSING', 'GENERATED', 'PENDING_APPROVAL', 'PUBLISHING', 'PUBLISHED',
 ];
-
-const PLATFORMS: Platform[] = ['WORDPRESS', 'FACEBOOK', 'TIKTOK', 'YOUTUBE', 'SHOPIFY'];
 
 function PublishModal({
   content,
@@ -53,7 +52,7 @@ function PublishModal({
             onChange={(e) => setPlatform(e.target.value as Platform)}
             className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-violet-500"
           >
-            {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
+            {PLATFORMS.map((p) => <option key={p} value={p}>{PLATFORM_LABELS[p]}</option>)}
           </select>
         </div>
 
@@ -148,7 +147,7 @@ export function ContentListPage() {
           className="bg-zinc-800 border border-zinc-700 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-violet-500"
         >
           <option value="">All Platforms</option>
-          {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
+          {PLATFORMS.map((p) => <option key={p} value={p}>{PLATFORM_LABELS[p]}</option>)}
         </select>
       </div>
 

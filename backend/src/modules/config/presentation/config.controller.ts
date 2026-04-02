@@ -1,12 +1,14 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PromptTemplatesService } from '../application/prompt-templates.service';
+import { PublishProviderService, CreateProviderDto, UpdateProviderDto } from '../application/publish-provider.service';
 
 @Controller('config')
 export class ConfigController {
   constructor(
     private promptTemplatesService: PromptTemplatesService,
     private configService: ConfigService,
+    private publishProviderService: PublishProviderService,
   ) {}
 
   @Get('prompts')
@@ -72,5 +74,48 @@ export class ConfigController {
       shopify: has('SHOPIFY_STORE_URL') && has('SHOPIFY_ACCESS_TOKEN') && has('SHOPIFY_BLOG_ID'),
       gemini: has('GOOGLE_API_KEY'),
     };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Publishing providers
+  // ---------------------------------------------------------------------------
+
+  @Get('providers')
+  async getProviders(
+    @Query('platform') platform?: string,
+    @Query('isActive') isActive?: string,
+  ) {
+    const providers = await this.publishProviderService.findAll({
+      platform,
+      isActive: isActive !== undefined ? isActive === 'true' : undefined,
+    });
+    // Never expose credentials to the frontend
+    return {
+      data: providers.map(({ credentials: _credentials, ...rest }) => rest),
+    };
+  }
+
+  @Get('providers/:id')
+  async getProviderById(@Param('id') id: string) {
+    const { credentials: _credentials, ...rest } = await this.publishProviderService.findById(id);
+    return rest;
+  }
+
+  @Post('providers')
+  async createProvider(@Body() body: CreateProviderDto) {
+    const { credentials: _credentials, ...rest } = await this.publishProviderService.create(body);
+    return rest;
+  }
+
+  @Put('providers/:id')
+  async updateProvider(@Param('id') id: string, @Body() body: UpdateProviderDto) {
+    const { credentials: _credentials, ...rest } = await this.publishProviderService.update(id, body);
+    return rest;
+  }
+
+  @Delete('providers/:id')
+  async deleteProvider(@Param('id') id: string) {
+    await this.publishProviderService.delete(id);
+    return { success: true };
   }
 }

@@ -1,8 +1,17 @@
+// Base payload — shared by all adapters
+export interface PublishAsset {
+  url: string;
+  type: 'image' | 'video';
+}
+
 export interface PublishPayload {
   title?: string;
   body: string;
   imageUrl?: string;
+  assets?: PublishAsset[];
   tags?: string[];
+  // Platform-specific options — each adapter casts to its own extension type
+  platformOptions?: object;
 }
 
 export interface PublishResult {
@@ -11,11 +20,13 @@ export interface PublishResult {
   errorMessage?: string;
 }
 
-export const WORDPRESS_ADAPTER = Symbol('WORDPRESS_ADAPTER');
-export const FACEBOOK_ADAPTER = Symbol('FACEBOOK_ADAPTER');
+// Credentials passed at call time — loaded from config_db, not injected at startup
+export interface ProviderCredentials {
+  [key: string]: string | undefined;
+}
 
 export interface IPublisherAdapter {
-  platform: string;
-  publish(payload: PublishPayload, targetPlatform?: string): Promise<PublishResult>;
-  isConfigured(): boolean;
+  readonly providerKey: string; // 'BUFFER' | 'PUBLER' | 'DIRECT'
+  publish(payload: PublishPayload, platform: string, credentials: ProviderCredentials): Promise<PublishResult>;
+  isConfigured(credentials: ProviderCredentials): boolean;
 }

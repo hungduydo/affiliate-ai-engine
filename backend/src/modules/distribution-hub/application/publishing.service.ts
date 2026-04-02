@@ -1,7 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PublishPrismaService } from '../prisma/prisma.service';
-import { Platform, PublishStatus } from '@prisma/client';
+import { Platform, PublishStatus } from '@prisma-client/distribution-hub';
 import { PaginationQuery } from '@shared/types/common.types';
+
+export interface PublishAssetInput {
+  url: string;
+  type: 'image' | 'video';
+}
 
 @Injectable()
 export class PublishingService {
@@ -32,36 +37,30 @@ export class PublishingService {
   }
 
   async findLogById(id: string) {
-    const log = await this.prisma.publishLog.findUnique({
-      where: { id },
-    });
+    const log = await this.prisma.publishLog.findUnique({ where: { id } });
     if (!log) throw new NotFoundException(`Publish log ${id} not found`);
     return log;
   }
 
-  async getPublishLogs(filters: {
-    contentId?: string;
-    status?: string;
-    platform?: string;
-    page?: number;
-    pageSize?: number;
-  }) {
-    return this.findLogs({
-      contentId: filters.contentId,
-      status: filters.status as PublishStatus,
-      platform: filters.platform as Platform,
-      page: filters.page || 1,
-      limit: filters.pageSize || 10,
-    });
-  }
-
-  async getPublishLogById(id: string) {
-    return this.findLogById(id);
-  }
-
-  async createLog(data: { contentId: string; platform: Platform }): Promise<{ id: string }> {
+  async createLog(data: {
+    contentId: string;
+    platform: Platform;
+    provider: string;
+    providerId: string;
+    scheduledAt?: string;
+    assets?: PublishAssetInput[];
+  }): Promise<{ id: string; status: PublishStatus }> {
+    const isScheduled = !!data.scheduledAt;
     return this.prisma.publishLog.create({
-      data: { contentId: data.contentId, platform: data.platform, status: PublishStatus.PENDING },
+      data: {
+        contentId: data.contentId,
+        platform: data.platform,
+        provider: data.provider,
+        providerId: data.providerId,
+        status: isScheduled ? PublishStatus.SCHEDULED : PublishStatus.PENDING,
+        scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : null,
+        assets: data.assets ? (data.assets as object[]) : undefined,
+      },
     });
   }
 }

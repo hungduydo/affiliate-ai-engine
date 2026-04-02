@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, Loader2, Save } from 'lucide-react';
 import { settingsService } from '../services/settings.service';
+import { PLATFORMS, PLATFORM_LABELS } from '@core/api/api.types';
 import type { PromptTemplate, Platform, ContentType } from '@core/api/api.types';
-
-const PLATFORMS: Platform[] = ['WORDPRESS', 'FACEBOOK', 'TIKTOK', 'YOUTUBE', 'SHOPIFY'];
 
 const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
   BLOG_POST: 'Blog Post',
@@ -91,7 +90,7 @@ export function PromptTemplateForm({ template, onClose }: Props) {
                 disabled={isEditing}
                 className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-violet-500 disabled:opacity-50"
               >
-                {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
+                {PLATFORMS.map((p) => <option key={p} value={p}>{PLATFORM_LABELS[p]}</option>)}
               </select>
             </div>
             <div className="space-y-1">

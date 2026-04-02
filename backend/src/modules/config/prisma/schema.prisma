@@ -26,12 +26,33 @@ model PromptTemplate {
   @@map("prompt_templates")
 }
 
+model PublishProvider {
+  id               String   @id @default(cuid())
+  key              String   // 'BUFFER' | 'PUBLER' | 'DIRECT'
+  label            String   // display name
+  enabledPlatforms Json     // string[] — platforms this provider handles
+  credentials      Json     // { apiToken?, organizationId?, wordpressUrl?, etc. }
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([key])
+  @@index([isActive])
+  @@map("publish_providers")
+}
+
 enum Platform {
   WORDPRESS
+  SHOPIFY
   FACEBOOK
+  INSTAGRAM
+  TWITTER
+  LINKEDIN
   TIKTOK
   YOUTUBE
-  SHOPIFY
+  PINTEREST
+  MASTODON
+  THREADS
 }
 
 enum ContentType {

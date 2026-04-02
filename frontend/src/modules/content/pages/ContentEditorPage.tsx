@@ -5,9 +5,8 @@ import { ArrowLeft, Edit2, Save, X, RefreshCw, CheckCircle, Send, Loader2 } from
 import { contentService } from '../services/content.service';
 import { StatusBadge } from '@shared/ui/StatusBadge';
 import { formatDate } from '@shared/utils/format';
+import { PLATFORMS, PLATFORM_LABELS } from '@core/api/api.types';
 import type { Platform, ContentStatus } from '@core/api/api.types';
-
-const PLATFORMS: Platform[] = ['WORDPRESS', 'FACEBOOK', 'TIKTOK', 'YOUTUBE', 'SHOPIFY'];
 
 export function ContentEditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -167,7 +166,7 @@ export function ContentEditorPage() {
               onChange={(e) => setPublishPlatform(e.target.value as Platform)}
               className="text-xs bg-zinc-800 border border-zinc-700 text-white rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-violet-500"
             >
-              {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
+              {PLATFORMS.map((p) => <option key={p} value={p}>{PLATFORM_LABELS[p]}</option>)}
             </select>
             <button
               onClick={() => publishMutation.mutate()}

@@ -3,12 +3,9 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { PublishPrismaService } from '../prisma/prisma.service';
-import { WordPressAdapter } from '../infrastructure/wordpress.adapter';
-import { FacebookAdapter } from '../infrastructure/facebook.adapter';
-import { ShopifyAdapter } from '../infrastructure/shopify.adapter';
-import { BufferAdapter } from '../infrastructure/buffer.adapter';
-import { PublishStatus, Platform } from '@prisma-client/distribution-hub';
-import { PublishPayload } from '../domain/adapters/publisher.adapter.interface';
+import { AdapterFactory } from './adapter-factory.service';
+import { PublishStatus } from '@prisma-client/distribution-hub';
+import { PublishPayload, ProviderCredentials } from '../domain/adapters/publisher.adapter.interface';
 
 interface ContentData {
   id: string;
@@ -19,6 +16,12 @@ interface ContentData {
   status: string;
 }
 
+interface ProviderData {
+  id: string;
+  key: string;
+  credentials: ProviderCredentials;
+}
+
 @Injectable()
 export class PublishContentService {
   private readonly logger = new Logger(PublishContentService.name);
@@ -26,10 +29,7 @@ export class PublishContentService {
 
   constructor(
     private readonly prisma: PublishPrismaService,
-    private readonly wordPressAdapter: WordPressAdapter,
-    private readonly facebookAdapter: FacebookAdapter,
-    private readonly shopifyAdapter: ShopifyAdapter,
-    private readonly bufferAdapter: BufferAdapter,
+    private readonly adapterFactory: AdapterFactory,
     private readonly http: HttpService,
     config: ConfigService,
   ) {
@@ -40,6 +40,10 @@ export class PublishContentService {
     // 1. Load publish log
     const log = await this.prisma.publishLog.findUnique({ where: { id: publishLogId } });
     if (!log) throw new Error(`PublishLog ${publishLogId} not found`);
+
+    if (!log.provider || !log.providerId) {
+      throw new Error(`PublishLog ${publishLogId} has no provider configured`);
+    }
 
     // 2. Mark as publishing
     await this.prisma.publishLog.update({
@@ -54,21 +58,25 @@ export class PublishContentService {
       );
       const content = contentRes.data;
 
+      // 4. Load provider credentials from config_db via internal REST
+      const providerRes = await firstValueFrom(
+        this.http.get<ProviderData>(`${this.internalBase}/api/internal/providers/${log.providerId}`),
+      );
+      const credentials = providerRes.data.credentials;
+
       const payload: PublishPayload = {
         title: content.title,
         body: content.body,
         imageUrl: content.imageUrl,
+        assets: log.assets ? (log.assets as { url: string; type: 'image' | 'video' }[]) : undefined,
       };
 
-      // 4. Route to adapter
-      const adapter = this.getAdapter(log.platform);
-      const targetPlatform = String(log.platform).startsWith('BUFFER_')
-        ? String(log.platform).replace('BUFFER_', '').toLowerCase()
-        : undefined;
-      const result = await adapter.publish(payload, targetPlatform);
+      // 5. Route to adapter by provider key
+      const adapter = this.adapterFactory.resolve(log.provider);
+      const result = await adapter.publish(payload, String(log.platform), credentials);
 
       if (result.success) {
-        // 5a. Mark log as published
+        // 6a. Mark log as published — this is the source of truth
         await this.prisma.publishLog.update({
           where: { id: publishLogId },
           data: {
@@ -78,12 +86,19 @@ export class PublishContentService {
           },
         });
 
-        // 5b. Update content status via internal REST
-        await firstValueFrom(
-          this.http.put(`${this.internalBase}/api/internal/content/${log.contentId}/status`, {
-            status: 'PUBLISHED',
-          }),
-        );
+        // 6b. Sync content status — non-critical, publish already succeeded
+        try {
+          await firstValueFrom(
+            this.http.put(`${this.internalBase}/api/internal/content/${log.contentId}/status`, {
+              status: 'PUBLISHED',
+            }),
+          );
+        } catch (syncErr: unknown) {
+          const syncMsg = syncErr instanceof Error ? syncErr.message : String(syncErr);
+          this.logger.warn(
+            `PublishLog ${publishLogId}: content status sync failed (non-critical): ${syncMsg}`,
+          );
+        }
 
         this.logger.log(`PublishLog ${publishLogId} completed: ${result.publishedLink}`);
       } else {
@@ -97,29 +112,6 @@ export class PublishContentService {
         data: { status: PublishStatus.FAILED, errorMessage: message },
       });
       throw err;
-    }
-  }
-
-  private getAdapter(platform: Platform) {
-    switch (platform) {
-      case Platform.WORDPRESS:
-        return this.wordPressAdapter;
-      case Platform.FACEBOOK:
-        return this.facebookAdapter;
-      case Platform.SHOPIFY:
-        return this.shopifyAdapter;
-      case Platform.BUFFER_TWITTER:
-      case Platform.BUFFER_INSTAGRAM:
-      case Platform.BUFFER_LINKEDIN:
-      case Platform.BUFFER_TIKTOK:
-      case Platform.BUFFER_PINTEREST:
-      case Platform.BUFFER_FACEBOOK:
-      case Platform.BUFFER_YOUTUBE:
-      case Platform.BUFFER_MASTODON:
-      case Platform.BUFFER_THREADS:
-        return this.bufferAdapter;
-      default:
-        throw new Error(`No adapter available for platform: ${platform}`);
     }
   }
 }
