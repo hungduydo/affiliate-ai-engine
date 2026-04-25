@@ -4,8 +4,14 @@ import { parse } from 'csv-parse';
 import { ScrapedProduct } from '../../domain/adapters/source.adapter.interface';
 
 // Handles Vietnamese number formats: "7,8k" → 7800, "₫7.020" → 7020, "90%" → 90
+// Also handles standard decimals: "99.9" → 99.9
 function parseVietnameseNumber(value: string): number {
-  const cleaned = value.replace(/[₫đ%\s]/g, '').replace(/\./g, '').replace(',', '.');
+  const noSymbols = value.replace(/[₫đ%\s]/g, '');
+  // If comma exists, treat as Vietnamese decimal: replace , with ., remove all .
+  // If no comma, keep . as decimal (standard format: 99.9 → 99.9)
+  const cleaned = noSymbols.includes(',')
+    ? noSymbols.replace(/\./g, '').replace(',', '.')
+    : noSymbols.replace(/(\.\d{3})/g, ''); // Only remove . if it's a thousands separator (exactly 3 digits after)
   const multiplier = /k$/i.test(cleaned) ? 1000 : 1;
   return parseFloat(cleaned.replace(/k$/i, '')) * multiplier;
 }

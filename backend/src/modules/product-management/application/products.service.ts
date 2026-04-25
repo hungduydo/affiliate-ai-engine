@@ -143,4 +143,8 @@ export class ProductsService {
   async setEnrichStatus(id: string, status: EnrichStatus) {
     return this.productRepo.update(id, { enrichStatus: status });
   }
+
+  async findExistingByExternalIds(ids: string[]): Promise<string[]> {
+    return this.productRepo.findExistingByExternalIds(ids);
+  }
 }

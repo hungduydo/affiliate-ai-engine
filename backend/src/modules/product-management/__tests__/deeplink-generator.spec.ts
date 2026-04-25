@@ -20,16 +20,6 @@ describe('DeeplinkGenerator', () => {
       expect(result).toContain('product_id=56857075873');
     });
 
-    it('should generate ClickBank link', () => {
-      const result = generator.generate('clickbank', 'CB12345');
-      expect(result).toContain('.hop.clickbank.net');
-    });
-
-    it('should generate CJ link', () => {
-      const result = generator.generate('cj', 'link123');
-      expect(result).toBe('https://www.jdoqocy.com/click-link123');
-    });
-
     it('should use baseUrl as fallback for unknown sources', () => {
       const result = generator.generate('unknown', 'id123', 'https://custom.link');
       expect(result).toBe('https://custom.link');

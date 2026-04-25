@@ -7,7 +7,7 @@ export class CreateProductDto {
   @IsString()
   externalId!: string;
 
-  @ApiProperty({ example: 'clickbank', enum: ['clickbank', 'shopee', 'cj'] })
+  @ApiProperty({ example: 'shopee', enum: ['shopee', 'trending-video'] })
   @IsString()
   source!: string;
 

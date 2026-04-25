@@ -1,15 +1,20 @@
 import { DirectAdapter } from '../infrastructure/direct.adapter';
 import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 import { of, throwError } from 'rxjs';
 import { createPublishPayloadFixture } from './fixtures/publishing.fixtures';
 
 describe('DirectAdapter', () => {
   let adapter: DirectAdapter;
   let http: jest.Mocked<HttpService>;
+  let config: jest.Mocked<ConfigService>;
 
   beforeEach(() => {
     http = { post: jest.fn() } as unknown as jest.Mocked<HttpService>;
-    adapter = new DirectAdapter(http);
+    config = {
+      get: jest.fn().mockReturnValue('http://localhost:4000'),
+    } as unknown as jest.Mocked<ConfigService>;
+    adapter = new DirectAdapter(http, config);
   });
 
   // ---------------------------------------------------------------------------
@@ -37,11 +42,10 @@ describe('DirectAdapter', () => {
       ).toBe(true);
     });
 
-    it('should return true when Facebook credentials are complete', () => {
+    it('should return true when facebookPageId is set', () => {
       expect(
         adapter.isConfigured({
           facebookPageId: 'page-123',
-          facebookAccessToken: 'EAAabc',
         }),
       ).toBe(true);
     });
@@ -213,18 +217,15 @@ describe('DirectAdapter', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Facebook
+  // Facebook — now delegated to flow-accounts internal API
   // ---------------------------------------------------------------------------
 
   describe('publish() — FACEBOOK', () => {
-    const facebookCreds = {
-      facebookPageId: 'page-111',
-      facebookAccessToken: 'EAAtest',
-    };
+    const facebookCreds = { facebookPageId: 'page-111' };
 
-    it('should publish successfully and return a Facebook post link', async () => {
+    it('should delegate to flow-accounts and return publishedLink on success', async () => {
       http.post.mockReturnValue(
-        of({ data: { id: 'page-111_post-222' } } as any),
+        of({ data: { success: true, platformPostId: 'page-111_post-222', publishedLink: 'https://www.facebook.com/page-111/posts/post-222' } } as any),
       );
 
       const result = await adapter.publish(createPublishPayloadFixture(), 'FACEBOOK', facebookCreds);
@@ -232,47 +233,34 @@ describe('DirectAdapter', () => {
       expect(result.publishedLink).toContain('facebook.com');
     });
 
-    it('should send message (body) in the request body', async () => {
+    it('should call flow-accounts /api/internal/publish with correct payload', async () => {
       const payload = createPublishPayloadFixture({ body: 'Hello Facebook!' });
-      http.post.mockReturnValue(of({ data: { id: 'page-111_post-333' } } as any));
+      http.post.mockReturnValue(
+        of({ data: { success: true, platformPostId: 'page-111_post-333', publishedLink: 'https://www.facebook.com/page-111/posts/post-333' } } as any),
+      );
 
       await adapter.publish(payload, 'FACEBOOK', facebookCreds);
 
+      const url = http.post.mock.calls[0][0] as string;
       const postBody = http.post.mock.calls[0][1] as any;
-      expect(postBody.message).toBe('Hello Facebook!');
+      expect(url).toContain('/api/internal/publish');
+      expect(postBody.platform).toBe('facebook');
+      expect(postBody.pageId).toBe('page-111');
+      expect(postBody.caption).toBe('Hello Facebook!');
     });
 
-    it('should pass access_token as a query param', async () => {
-      http.post.mockReturnValue(of({ data: { id: 'page-111_post-444' } } as any));
-
-      await adapter.publish(createPublishPayloadFixture(), 'FACEBOOK', facebookCreds);
-
-      const config = http.post.mock.calls[0][2] as any;
-      expect(config.params.access_token).toBe('EAAtest');
-    });
-
-    it('should return error when Facebook credentials are missing', async () => {
+    it('should return error when facebookPageId is missing', async () => {
       const result = await adapter.publish(createPublishPayloadFixture(), 'FACEBOOK', {});
       expect(result.success).toBe(false);
-      expect(result.errorMessage).toContain('Facebook credentials not configured');
+      expect(result.errorMessage).toContain('pageId not configured');
     });
 
-    it('should return error when HTTP call fails', async () => {
-      http.post.mockReturnValue(throwError(() => new Error('Graph API error')));
+    it('should return error when flow-accounts call fails', async () => {
+      http.post.mockReturnValue(throwError(() => new Error('flow-accounts unreachable')));
 
       const result = await adapter.publish(createPublishPayloadFixture(), 'FACEBOOK', facebookCreds);
       expect(result.success).toBe(false);
-      expect(result.errorMessage).toContain('Graph API error');
-    });
-
-    it('should include imageUrl as link when provided', async () => {
-      const payload = createPublishPayloadFixture({ imageUrl: 'https://img.com/photo.jpg' });
-      http.post.mockReturnValue(of({ data: { id: 'page-111_post-555' } } as any));
-
-      await adapter.publish(payload, 'FACEBOOK', facebookCreds);
-
-      const postBody = http.post.mock.calls[0][1] as any;
-      expect(postBody.link).toBe('https://img.com/photo.jpg');
+      expect(result.errorMessage).toContain('flow-accounts unreachable');
     });
   });
 });

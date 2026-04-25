@@ -1,11 +1,14 @@
 import {
-  Controller, Get, Post, Put, Delete, Param, Body, Query, HttpCode, HttpStatus,
+  Controller, Get, Post, Put, Delete, Param, Body, Query, HttpCode, HttpStatus, UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { ProductsService } from '../application/products.service';
 import { ProductDNAService } from '../application/product-dna.service';
 import { CreateProductDto, UpdateProductStatusDto } from './dto/create-product.dto';
 import { ProductStatus } from '@prisma-client/product-management';
+import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
+import { Roles } from '@auth/decorators/roles.decorator';
+import { RolesGuard } from '@auth/guards/role.guard';
 
 @ApiTags('products')
 @Controller('products')
@@ -39,26 +42,38 @@ export class ProductsController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Create a new product' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'EDITOR')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a new product (requires auth)' })
   create(@Body() dto: CreateProductDto) {
     return this.productsService.create(dto);
   }
 
   @Put(':id/status')
-  @ApiOperation({ summary: 'Update product status' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'EDITOR')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update product status (requires auth)' })
   updateStatus(@Param('id') id: string, @Body() dto: UpdateProductStatusDto) {
     return this.productsService.updateStatus(id, dto.status);
   }
 
   @Post(':id/extract-dna')
-  @ApiOperation({ summary: 'Extract Product DNA using AI (sets status to ACTIVE on success)' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'EDITOR')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Extract Product DNA using AI (requires auth)' })
   extractDNA(@Param('id') id: string) {
     return this.productDNAService.extractDNA(id).then(dna => ({ dna }));
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete a product' })
+  @ApiOperation({ summary: 'Delete a product (admin only)' })
   remove(@Param('id') id: string) {
     return this.productsService.delete(id);
   }

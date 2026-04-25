@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import {
   IPublisherAdapter,
@@ -17,23 +18,27 @@ interface ShopifyArticleResponse {
  * No 3rd-party intermediary. Routes internally by platform:
  *   WORDPRESS → WordPress REST API (Basic auth)
  *   SHOPIFY   → Shopify REST API
- *   FACEBOOK  → Facebook Graph API
+ *   FACEBOOK  → flow-accounts internal API (encrypted tokens, audit log)
  */
 @Injectable()
 export class DirectAdapter implements IPublisherAdapter {
   readonly providerKey = 'DIRECT';
   private readonly logger = new Logger(DirectAdapter.name);
+  private readonly flowAccountsUrl: string;
 
-  constructor(private readonly http: HttpService) {}
+  constructor(
+    private readonly http: HttpService,
+    config: ConfigService,
+  ) {
+    this.flowAccountsUrl = config.get<string>('FLOW_ACCOUNTS_URL', 'http://localhost:4000');
+  }
 
   isConfigured(credentials: ProviderCredentials): boolean {
-    // At least one platform's credentials must be present
     const hasWordPress =
       !!(credentials.wordpressUrl && credentials.wordpressUsername && credentials.wordpressAppPassword);
     const hasShopify =
       !!(credentials.shopifyStoreUrl && credentials.shopifyAccessToken && credentials.shopifyBlogId);
-    const hasFacebook =
-      !!(credentials.facebookPageId && credentials.facebookAccessToken);
+    const hasFacebook = !!credentials.facebookPageId;
     return hasWordPress || hasShopify || hasFacebook;
   }
 
@@ -44,7 +49,9 @@ export class DirectAdapter implements IPublisherAdapter {
       case 'SHOPIFY':
         return this.publishShopify(payload, credentials);
       case 'FACEBOOK':
-        return this.publishFacebook(payload, credentials);
+        return this.publishViaFlowAccounts('facebook', payload, credentials);
+      case 'INSTAGRAM':
+        return this.publishViaFlowAccounts('instagram', payload, credentials);
       default:
         return { success: false, errorMessage: `Direct adapter does not support platform: ${platform}` };
     }
@@ -136,38 +143,37 @@ export class DirectAdapter implements IPublisherAdapter {
   }
 
   // ---------------------------------------------------------------------------
-  // Facebook
+  // Facebook / Instagram — delegated to flow-accounts (encrypted tokens, audit)
   // ---------------------------------------------------------------------------
 
-  private async publishFacebook(payload: PublishPayload, credentials: ProviderCredentials): Promise<PublishResult> {
-    const { facebookPageId, facebookAccessToken } = credentials;
-
-    if (!facebookPageId || !facebookAccessToken) {
-      return { success: false, errorMessage: 'Facebook credentials not configured (facebookPageId, facebookAccessToken required)' };
+  private async publishViaFlowAccounts(
+    platform: 'facebook' | 'instagram',
+    payload: PublishPayload,
+    credentials: ProviderCredentials,
+  ): Promise<PublishResult> {
+    const pageId = credentials.facebookPageId;
+    if (!pageId) {
+      return { success: false, errorMessage: `${platform} pageId not configured in provider credentials` };
     }
+
+    const imageUrls = payload.assets?.filter((a) => a.type === 'image').map((a) => a.url)
+      ?? (payload.imageUrl ? [payload.imageUrl] : []);
+    const hasVideo = payload.assets?.some((a) => a.type === 'video') ?? false;
+    const mediaType = hasVideo ? 'video' : imageUrls.length > 0 ? 'photo' : 'text';
 
     try {
       const response = await firstValueFrom(
-        this.http.post<{ id: string }>(
-          `https://graph.facebook.com/v19.0/${facebookPageId}/feed`,
-          {
-            message: payload.body,
-            ...(payload.imageUrl ? { link: payload.imageUrl } : {}),
-          },
-          {
-            params: { access_token: facebookAccessToken },
-            headers: { 'Content-Type': 'application/json' },
-          },
+        this.http.post<{ success: boolean; platformPostId: string; publishedLink: string }>(
+          `${this.flowAccountsUrl}/api/internal/publish`,
+          { platform, pageId, caption: payload.body, mediaUrls: imageUrls, mediaType },
         ),
       );
 
-      const postId = response.data.id;
-      const publishedLink = `https://www.facebook.com/${postId.replace('_', '/posts/')}`;
-      this.logger.log(`Published to Facebook: ${publishedLink}`);
-      return { success: true, publishedLink };
+      this.logger.log(`Published to ${platform} via flow-accounts: ${response.data.publishedLink}`);
+      return { success: true, publishedLink: response.data.publishedLink };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      this.logger.error(`Facebook publish failed: ${message}`);
+      this.logger.error(`${platform} publish via flow-accounts failed: ${message}`);
       return { success: false, errorMessage: message };
     }
   }

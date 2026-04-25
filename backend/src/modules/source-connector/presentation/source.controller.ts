@@ -8,6 +8,7 @@ import { QUEUE_NAMES, JobName } from '../../queue-engine/queue.constants';
 import { IngestProductsDto } from './dto/ingest-products.dto';
 import { EnrichBatchDto } from './dto/enrich-batch.dto';
 import { ProductEnrichmentService } from '../application/product-enrichment.service';
+import { ProductDiscoveryService, IngestDiscoverDto } from '../application/product-discovery.service';
 
 const VALID_QUEUES = Object.values(QUEUE_NAMES) as string[];
 
@@ -19,11 +20,25 @@ export class SourceController {
   constructor(
     private readonly queueService: QueueService,
     private readonly enrichmentService: ProductEnrichmentService,
+    private readonly discoveryService: ProductDiscoveryService,
     private readonly http: HttpService,
     private readonly config: ConfigService,
   ) {
     const backendUrl = this.config.get<string>('BACKEND_INTERNAL_URL', 'http://localhost:3000');
     this.internalProductsUrl = `${backendUrl}/api/internal/products`;
+  }
+
+  @Get('discover')
+  @ApiOperation({ summary: 'Discover trending affiliate products' })
+  @ApiQuery({ name: 'force', required: false, description: 'Bypass 6-hour cache and fetch fresh results' })
+  async discover(@Query('force') force?: string) {
+    return this.discoveryService.discover(force === 'true');
+  }
+
+  @Post('ingest-discover')
+  @ApiOperation({ summary: 'Import a discovered product and generate content' })
+  async ingestDiscover(@Body() dto: IngestDiscoverDto) {
+    return this.discoveryService.ingestDiscover(dto);
   }
 
   @Post('ingest')

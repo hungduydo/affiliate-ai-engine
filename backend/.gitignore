@@ -4,3 +4,4 @@ dist/
 *.local
 shopee-cookies.json
 *cookies.json
+coverage/

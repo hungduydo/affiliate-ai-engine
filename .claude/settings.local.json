@@ -5,7 +5,11 @@
       "Bash(pnpm test:content-factory)",
       "Bash(npm run:*)",
       "Bash(node -e \"const t = require\\(''prisma/config''\\); console.log\\(JSON.stringify\\(Object.keys\\(t\\)\\)\\)\")",
-      "WebFetch(domain:developers.buffer.com)"
+      "WebFetch(domain:developers.buffer.com)",
+      "Bash(npm test:*)",
+      "Bash(npx tsc:*)",
+      "Bash(ls backend/*.config.ts)",
+      "Bash(npx prisma:*)"
     ]
   }
 }

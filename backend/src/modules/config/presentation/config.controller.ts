@@ -66,8 +66,6 @@ export class ConfigController {
   getConnectorStatus() {
     const has = (key: string) => !!this.configService.get<string>(key);
     return {
-      clickbank: has('CLICKBANK_DEV_API_KEY'),
-      cj: has('CJ_API_TOKEN'),
       shopee: has('SHOPEE_COOKIE_FILE_PATH'),
       wordpress: has('WORDPRESS_URL') && has('WORDPRESS_USERNAME') && has('WORDPRESS_APP_PASSWORD'),
       facebook: has('FACEBOOK_PAGE_ID') && has('FACEBOOK_ACCESS_TOKEN'),

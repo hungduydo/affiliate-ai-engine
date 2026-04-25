@@ -1,6 +1,7 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Put, Param, Query, Body } from '@nestjs/common';
 import { PromptTemplatesService } from '../application/prompt-templates.service';
 import { PublishProviderService } from '../application/publish-provider.service';
+import { DiscoveryCacheService, DiscoverProduct } from '../application/discovery-cache.service';
 
 /**
  * Internal API for other modules to fetch config data
@@ -11,6 +12,7 @@ export class ConfigInternalController {
   constructor(
     private promptTemplatesService: PromptTemplatesService,
     private publishProviderService: PublishProviderService,
+    private discoveryCacheService: DiscoveryCacheService,
   ) {}
 
   @Get('prompts')
@@ -46,5 +48,23 @@ export class ConfigInternalController {
   @Get('providers/:id')
   async getProviderById(@Param('id') id: string) {
     return await this.publishProviderService.findById(id);
+  }
+
+  @Get('discovery-cache')
+  async getDiscoveryCache() {
+    return await this.discoveryCacheService.get();
+  }
+
+  @Put('discovery-cache')
+  async setDiscoveryCache(
+    @Body() body: {
+      data: DiscoverProduct[];
+      updatedAt: string;
+      partial?: boolean;
+      failedAdvertisers?: { name: string; error: string }[];
+    },
+  ) {
+    await this.discoveryCacheService.set(body);
+    return { ok: true };
   }
 }

@@ -17,8 +17,9 @@ model Content {
   contentType  ContentType
   title        String?
   body         String
-  mediaAssets  Json? // Image URLs, video assets
-  promptId     String? // References config module's PromptTemplate
+  mediaAssets     Json?   // Image URLs, video assets (videoKey, thumbnailKey for video content)
+  sourceVideoUrl  String? // Bilibili URL for VIDEO_SCRIPT — consumed by flow-video worker
+  promptId        String? // References config module's PromptTemplate
   status              ContentStatus @default(RAW)
   scheduledPublishAt  DateTime?
   scheduledPlatform   Platform?

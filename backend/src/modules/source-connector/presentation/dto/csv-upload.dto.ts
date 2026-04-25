@@ -6,9 +6,9 @@ export class CsvConfirmDto {
   @IsString()
   filePath!: string;
 
-  @ApiProperty({ example: 'clickbank', enum: ['clickbank', 'cj', 'shopee'] })
+  @ApiProperty({ example: 'shopee', enum: ['shopee', 'trending-video'] })
   @IsString()
-  @IsIn(['clickbank', 'cj', 'shopee'])
+  @IsIn(['shopee', 'trending-video'])
   source!: string;
 
   @ApiProperty({

@@ -47,6 +47,11 @@ export class GenerateContentDto {
   @IsOptional()
   @IsString()
   promptId?: string;
+
+  @ApiPropertyOptional({ description: 'Bilibili URL — required when contentType=VIDEO_SCRIPT to trigger flow-video processing' })
+  @IsOptional()
+  @IsString()
+  sourceVideoUrl?: string;
 }
 
 export class UpdateContentStatusDto {

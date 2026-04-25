@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Param, Query, Body } from '@nestjs/common';
+import { Controller, Get, Put, Patch, Param, Query, Body } from '@nestjs/common';
 import { ContentService } from '../application/content.service';
 import { ContentStatus } from '@prisma/client';
 
@@ -38,5 +38,13 @@ export class ContentInternalController {
     @Body() body: { status: ContentStatus },
   ) {
     return await this.contentService.updateStatus(id, body.status);
+  }
+
+  @Patch(':id')
+  async updateMediaAssets(
+    @Param('id') id: string,
+    @Body() body: { mediaAssets: Record<string, unknown> },
+  ) {
+    return await this.contentService.updateMediaAssets(id, body.mediaAssets);
   }
 }

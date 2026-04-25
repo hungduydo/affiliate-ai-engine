@@ -80,4 +80,13 @@ export class PrismaProductRepository implements IProductRepository {
   async delete(id: string): Promise<void> {
     await this.prisma.product.delete({ where: { id } });
   }
+
+  async findExistingByExternalIds(ids: string[]): Promise<string[]> {
+    if (ids.length === 0) return [];
+    const rows = await this.prisma.product.findMany({
+      where: { externalId: { in: ids } },
+      select: { externalId: true },
+    });
+    return rows.map((r) => r.externalId);
+  }
 }

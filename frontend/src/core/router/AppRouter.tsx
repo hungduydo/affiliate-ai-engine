@@ -4,6 +4,7 @@ import { DashboardPage } from '@modules/dashboard/pages/DashboardPage';
 import { ProductListPage } from '@modules/products/pages/ProductListPage';
 import { ProductDetailPage } from '@modules/products/pages/ProductDetailPage';
 import { ProductImportPage } from '@modules/products/pages/ProductImportPage';
+import { ProductDiscoverPage } from '@modules/products/pages/ProductDiscoverPage';
 import { ContentListPage } from '@modules/content/pages/ContentListPage';
 import { ContentGeneratePage } from '@modules/content/pages/ContentGeneratePage';
 import { ContentEditorPage } from '@modules/content/pages/ContentEditorPage';
@@ -19,6 +20,7 @@ export function AppRouter() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/products" element={<ProductListPage />} />
           <Route path="/products/import" element={<ProductImportPage />} />
+          <Route path="/products/discover" element={<ProductDiscoverPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/content" element={<ContentListPage />} />
           <Route path="/content/generate" element={<ContentGeneratePage />} />

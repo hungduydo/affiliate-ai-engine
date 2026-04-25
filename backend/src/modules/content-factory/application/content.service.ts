@@ -36,7 +36,7 @@ export class ContentService {
     return content;
   }
 
-  async create(dto: CreateContentDto) {
+  async create(dto: CreateContentDto & { sourceVideoUrl?: string }) {
     return this.prisma.content.create({
       data: {
         productId: dto.productId,
@@ -45,6 +45,7 @@ export class ContentService {
         title: dto.title ?? null,
         body: dto.body ?? '',
         promptId: dto.promptId ?? null,
+        sourceVideoUrl: dto.sourceVideoUrl ?? null,
         status: ContentStatus.RAW,
       },
     });
@@ -84,6 +85,15 @@ export class ContentService {
         ...(dto.title !== undefined && { title: dto.title }),
         ...(dto.body !== undefined && { body: dto.body }),
       },
+    });
+  }
+
+  async updateMediaAssets(id: string, mediaAssets: Record<string, unknown>) {
+    await this.findById(id); // ensure exists
+    return this.prisma.content.update({
+      where: { id },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      data: { mediaAssets: mediaAssets as any },
     });
   }
 

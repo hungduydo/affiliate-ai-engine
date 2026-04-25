@@ -22,6 +22,9 @@
     "noFallthroughCasesInSwitch": false,
     "moduleResolution": "node",
     "paths": {
+      "@auth/*": [
+        "src/auth/*"
+      ],
       "@shared/*": [
         "src/shared/*"
       ],

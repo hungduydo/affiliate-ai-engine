@@ -6,6 +6,8 @@ import { ContentPrismaService } from '../prisma/prisma.service';
 import { AI_ADAPTER, AIAdapter, ProductDNA } from '@shared/ai/ai-adapter.interface';
 import { renderPrompt } from '@shared/utils/prompt-renderer';
 import { ContentStatus } from '@prisma-client/content-factory';
+import { QueueService } from '../../queue-engine/queue.service';
+import { QUEUE_NAMES, JobName } from '../../queue-engine/queue.constants';
 
 interface ProductData {
   id: string;
@@ -33,6 +35,7 @@ export class ContentGenerationService {
     private readonly prisma: ContentPrismaService,
     @Inject(AI_ADAPTER) private readonly ai: AIAdapter,
     private readonly http: HttpService,
+    private readonly queueService: QueueService,
     config: ConfigService,
   ) {
     this.internalBase = config.get<string>('BACKEND_INTERNAL_URL', 'http://localhost:3000');
@@ -95,6 +98,17 @@ export class ContentGenerationService {
           status: ContentStatus.GENERATED,
         },
       });
+
+      // 8. If VIDEO_SCRIPT with a source URL, hand off to flow-video worker
+      if (content.contentType === 'VIDEO_SCRIPT' && content.sourceVideoUrl) {
+        const targetPlatform = content.platform === 'TIKTOK' ? 'tiktok' : 'youtube';
+        await this.queueService.addJob(QUEUE_NAMES.VIDEO_PROCESSING, JobName.PROCESS_VIDEO, {
+          contentId,
+          bilibiliUrl: content.sourceVideoUrl,
+          targetPlatform,
+        });
+        this.logger.log(`Content ${contentId}: video processing job enqueued for ${content.sourceVideoUrl}`);
+      }
 
       this.logger.log(`Content ${contentId} generated successfully`);
     } catch (err: unknown) {

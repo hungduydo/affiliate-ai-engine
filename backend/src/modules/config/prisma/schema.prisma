@@ -26,6 +26,18 @@ model PromptTemplate {
   @@map("prompt_templates")
 }
 
+// Phase 1: single row, key is always "cj_all".
+// Phase 2 multi-network / multi-tenant will need composite key (network + userId) — see TODOS.md [DISCO-6]
+model DiscoveryCache {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  data      Json     // DiscoverProduct[]
+  meta      Json?    // { partial?: boolean, failedAdvertisers?: { name: string, error: string }[] }
+  updatedAt DateTime @updatedAt
+
+  @@map("discovery_cache")
+}
+
 model PublishProvider {
   id               String   @id @default(cuid())
   key              String   // 'BUFFER' | 'PUBLER' | 'DIRECT'

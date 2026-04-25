@@ -50,6 +50,7 @@ export class ContentController {
       platform: dto.platform,
       contentType: dto.contentType,
       promptId: dto.promptId,
+      sourceVideoUrl: dto.sourceVideoUrl,
       body: '',
     });
 

@@ -10,6 +10,8 @@ Personal SaaS for affiliate marketing automation. Ingests products from affiliat
 
 **Backend:** NestJS monoservice (single process) with **4 isolated PostgreSQL databases** — one per domain module. No shared Prisma client, no cross-module foreign keys. Modules communicate via internal REST APIs (`/api/internal/*`). BullMQ on Redis for async job processing.
 
+**Authentication:** JWT-based auth via `flow-accounts` service. Both `flow` and `flow-accounts` share the same `JWT_SECRET` for token reuse — any token issued by flow-accounts is immediately valid in flow. Users are stored in `flow_accounts_db` (single source of truth). See [AUTHENTICATION_SETUP.md](./AUTHENTICATION_SETUP.md) for detailed guide.
+
 **Frontend:** React 19 + Vite, feature-module layout, TanStack Query v5 for server state, Zustand for local state. **Not Next.js** — never add `"use client"` directives.
 
 ---
@@ -37,6 +39,14 @@ cd frontend && npm run dev     # http://localhost:5173
 ```
 
 Swagger docs: `http://localhost:3001/docs`
+
+Browse databases (Prisma Studio GUI on localhost:5555):
+```bash
+npm run db:studio:products   # products_db
+npm run db:studio:content    # content_db
+npm run db:studio:publish    # publish_db
+npm run db:studio:config     # config_db (includes DiscoveryCache)
+```
 
 ---
 
@@ -93,15 +103,28 @@ CJ_WEBSITE_ID=
 CJ_API_TOKEN=
 SHOPEE_COOKIE_FILE_PATH=./shopee-cookies.json
 
-# Publishing
+# Publishing — WordPress + Shopify credentials (stored in config_db publish_providers)
 WORDPRESS_URL=
 WORDPRESS_USERNAME=
 WORDPRESS_APP_PASSWORD=
-FACEBOOK_PAGE_ID=
-FACEBOOK_ACCESS_TOKEN=
 SHOPIFY_STORE_URL=
 SHOPIFY_ACCESS_TOKEN=
 SHOPIFY_BLOG_ID=
+# Facebook/Instagram tokens are managed by flow-accounts (OAuth, AES-256-GCM encrypted)
+# flow-accounts must be running at FLOW_ACCOUNTS_URL for Facebook/Instagram publishing to work
+
+# JWT authentication (shared with flow-accounts for token reuse — MUST MATCH flow-accounts secrets)
+JWT_SECRET=your-32-character-random-secret-key-here
+JWT_REFRESH_SECRET=your-32-character-random-refresh-secret-key-here
+JWT_EXPIRY=900
+JWT_REFRESH_EXPIRY=604800
+
+# flow-accounts database (for shared user authentication)
+FLOW_ACCOUNTS_DB_URL=postgresql://postgres:postgres_dev@localhost:5432/flow_accounts_db
+
+# Service integration
+FLOW_SEARCH_URL=http://localhost:8000
+FLOW_ACCOUNTS_URL=http://localhost:4000
 ```
 
 ---
@@ -113,6 +136,18 @@ backend/src/
 ├── app.module.ts                        # Root module (ConfigModule.forRoot isGlobal: true)
 ├── main.ts                              # Bootstrap, port 3001, Swagger at /docs
 ├── health.controller.ts                 # GET /health
+│
+├── auth/                                # JWT authentication (shared with flow-accounts)
+│   ├── auth.module.ts                   # Passport + JWT registration
+│   ├── controllers/auth.controller.ts   # POST /auth/login, /auth/refresh, /auth/me
+│   ├── services/auth.service.ts         # Login, token generation, refresh logic
+│   ├── services/users.service.ts        # Query flow_accounts_db for users
+│   ├── strategies/jwt.strategy.ts       # Passport JWT strategy
+│   ├── guards/jwt-auth.guard.ts         # @UseGuards(JwtAuthGuard)
+│   ├── guards/role.guard.ts             # @UseGuards(RolesGuard) + @Roles('ADMIN')
+│   └── decorators/
+│       ├── user.decorator.ts            # @User() user
+│       └── roles.decorator.ts           # @Roles('ADMIN', 'EDITOR')
 │
 ├── modules/
 │   ├── product-management/              # DB: products_db
@@ -180,6 +215,7 @@ backend/src/
 │       └── queue-engine.module.ts
 │
 └── shared/
+    ├── database/flow-accounts.prisma.ts # Prisma client for flow_accounts_db (read user data)
     ├── filters/global-exception.filter.ts
     ├── types/common.types.ts
     └── utils/prompt-renderer.ts         # renderPrompt(template, vars) — {{variable}} substitution
@@ -211,8 +247,27 @@ await queueService.addJob(QUEUE_NAMES.CONTENT_GENERATION, JobName.GENERATE_CONTE
 ```
 
 **Prisma path aliases** (`tsconfig.json`):
+- `@auth/*` → `src/auth/*`
 - `@shared/*` → `src/shared/*`
 - `@modules/*` → `src/modules/*`
+
+### Authentication
+
+**Protected routes use JWT + optional role checks:**
+```typescript
+@Post('create')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN', 'EDITOR')
+@ApiBearerAuth()
+async create(@User() user, @Body() dto) { ... }
+```
+
+**Token reuse:**
+- flow-accounts issues JWT signed with `JWT_SECRET`
+- flow validates same JWT using identical `JWT_SECRET`
+- Users stored in `flow_accounts_db` (single source of truth)
+- flow queries `flow_accounts_db.users` for login + role validation
+- See [AUTHENTICATION_SETUP.md](./AUTHENTICATION_SETUP.md) for integration details
 
 ---
 

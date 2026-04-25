@@ -41,4 +41,11 @@ export class ProductsInternalController {
   async enrichProduct(@Param('id') id: string, @Body() dto: EnrichProductDto) {
     return await this.productsService.applyEnrichment(id, dto);
   }
+
+  @Get('exists')
+  async checkExist(@Query('externalIds') externalIds: string | string[]) {
+    const ids = Array.isArray(externalIds) ? externalIds : externalIds ? [externalIds] : [];
+    const existingIds = await this.productsService.findExistingByExternalIds(ids);
+    return { existingIds };
+  }
 }

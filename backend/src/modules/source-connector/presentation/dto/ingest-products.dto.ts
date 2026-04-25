@@ -3,9 +3,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
 export class IngestProductsDto {
-  @ApiProperty({ example: 'clickbank', enum: ['clickbank', 'cj', 'shopee'] })
+  @ApiProperty({ example: 'shopee', enum: ['shopee', 'trending-video'] })
   @IsString()
-  @IsIn(['clickbank', 'cj', 'shopee'])
+  @IsIn(['shopee', 'trending-video'])
   source!: string;
 
   @ApiProperty({ example: 'weight loss' })

@@ -53,12 +53,17 @@ describe('GeminiAdapter', () => {
         body: 'Test body content',
       });
       expect(mockGenerativeModel.generateContent).toHaveBeenCalledWith(
-        expect.stringContaining('Write about test product'),
-      );
-      expect(mockGenerativeModel.generateContent).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'Respond with ONLY a valid JSON object in this exact format',
-        ),
+        expect.objectContaining({
+          contents: expect.arrayContaining([
+            expect.objectContaining({
+              parts: expect.arrayContaining([
+                expect.objectContaining({
+                  text: expect.stringContaining('Write about test product'),
+                }),
+              ]),
+            }),
+          ]),
+        }),
       );
     });
 
@@ -267,10 +272,30 @@ describe('GeminiAdapter', () => {
 
       // Assert
       expect(mockGenerativeModel.generateContent).toHaveBeenCalledWith(
-        expect.stringContaining('Original prompt'),
+        expect.objectContaining({
+          contents: expect.arrayContaining([
+            expect.objectContaining({
+              parts: expect.arrayContaining([
+                expect.objectContaining({
+                  text: expect.stringContaining('Original prompt'),
+                }),
+              ]),
+            }),
+          ]),
+        }),
       );
       expect(mockGenerativeModel.generateContent).toHaveBeenCalledWith(
-        expect.stringContaining('ONLY a valid JSON object'),
+        expect.objectContaining({
+          contents: expect.arrayContaining([
+            expect.objectContaining({
+              parts: expect.arrayContaining([
+                expect.objectContaining({
+                  text: expect.stringContaining('Respond with a valid JSON object'),
+                }),
+              ]),
+            }),
+          ]),
+        }),
       );
     });
 

@@ -9,6 +9,7 @@ import { QueueEngineModule } from './modules/queue-engine/queue-engine.module';
 import { SourceConnectorModule } from './modules/source-connector/source-connector.module';
 import { ConfigModule as ConfigModuleLocal } from './modules/config/config.module';
 import { AiModule } from './shared/ai/ai.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AiModule } from './shared/ai/ai.module';
       }),
     }),
     AiModule,
+    AuthModule,
     QueueEngineModule,
     ConfigModuleLocal,
     ProductManagementModule,

@@ -3,10 +3,9 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { ISourceAdapter, ScrapedProduct } from '../domain/adapters/source.adapter.interface';
-import { ClickBankAdapter } from '../infrastructure/adapters/clickbank/clickbank.adapter';
-import { CJAdapter } from '../infrastructure/adapters/cj/cj.adapter';
 import { ShopeePlaywrightAdapter } from '../infrastructure/adapters/shopee/shopee.playwright.adapter';
 import { CsvImporter, CsvFieldMapping } from '../infrastructure/csv/csv.importer';
+import { TrendingVideoAdapter } from '../infrastructure/adapters/trending-video/trending-video.adapter';
 
 export interface IngestParams {
   source: string;
@@ -31,15 +30,13 @@ export class ProductIngestionService {
   constructor(
     private readonly http: HttpService,
     private readonly config: ConfigService,
-    private readonly clickBankAdapter: ClickBankAdapter,
-    private readonly cjAdapter: CJAdapter,
     private readonly shopeeAdapter: ShopeePlaywrightAdapter,
     private readonly csvImporter: CsvImporter,
+    private readonly trendingVideoAdapter: TrendingVideoAdapter,
   ) {
     this.adapters = new Map<string, ISourceAdapter>([
-      ['clickbank', this.clickBankAdapter],
-      ['cj', this.cjAdapter],
       ['shopee', this.shopeeAdapter],
+      ['trending-video', this.trendingVideoAdapter],
     ]);
 
     const backendUrl = this.config.get<string>('BACKEND_INTERNAL_URL', 'http://localhost:3000');

@@ -22,8 +22,12 @@
     "db:generate:content": "cd backend && npx prisma generate --config=./src/modules/content-factory/prisma.config.ts",
     "db:generate:publish": "cd backend && npx prisma generate --config=./src/modules/distribution-hub/prisma.config.ts",
     "db:generate:config": "cd backend && npx prisma generate --config=./src/modules/config/prisma.config.ts",
-    "infra:up": "docker-compose up -d",
-    "infra:down": "docker-compose down",
-    "infra:logs": "docker-compose logs -f"
+    "db:studio:products": "cd backend && npx prisma studio --schema=./src/modules/product-management/prisma/schema.prisma",
+    "db:studio:content": "cd backend && npx prisma studio --schema=./src/modules/content-factory/prisma/schema.prisma",
+    "db:studio:publish": "cd backend && npx prisma studio --schema=./src/modules/distribution-hub/prisma/schema.prisma",
+    "db:studio:config": "cd backend && npx prisma studio --schema=./src/modules/config/prisma/schema.prisma",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "infra:logs": "docker compose logs -f"
   }
 }

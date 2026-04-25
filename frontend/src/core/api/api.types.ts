@@ -40,6 +40,20 @@ export const PLATFORMS = Object.keys(PLATFORM_LABELS) as Platform[];
 
 export type ContentType = 'BLOG_POST' | 'SOCIAL_POST' | 'VIDEO_SCRIPT' | 'CAROUSEL' | 'THREAD' | 'HERO_COPY';
 
+export const PLATFORM_CONTENT_TYPES: Record<Platform, ContentType[]> = {
+  WORDPRESS: ['BLOG_POST', 'HERO_COPY'],
+  SHOPIFY: ['BLOG_POST', 'HERO_COPY'],
+  FACEBOOK: ['SOCIAL_POST', 'CAROUSEL', 'VIDEO_SCRIPT'],
+  INSTAGRAM: ['SOCIAL_POST', 'CAROUSEL', 'VIDEO_SCRIPT'],
+  TWITTER: ['SOCIAL_POST', 'THREAD'],
+  LINKEDIN: ['SOCIAL_POST', 'CAROUSEL', 'BLOG_POST'],
+  TIKTOK: ['VIDEO_SCRIPT'],
+  YOUTUBE: ['VIDEO_SCRIPT'],
+  PINTEREST: ['SOCIAL_POST', 'CAROUSEL'],
+  MASTODON: ['SOCIAL_POST', 'THREAD'],
+  THREADS: ['SOCIAL_POST', 'THREAD'],
+};
+
 export interface ProductDNA {
   coreProblem: string;
   keyFeatures: Array<{ feature: string; emotionalBenefit: string }>;
@@ -103,6 +117,36 @@ export interface PromptTemplate {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface DiscoverProduct {
+  externalId: string;
+  name: string;
+  description: string;
+  commission: number;
+  epc: number;
+  price: number;
+  affiliateLink: string;
+  imageUrl?: string;
+  advertiserName: string;
+  category: string;
+  score: number;
+  imported: boolean;
+}
+
+export interface DiscoverResponse {
+  products: DiscoverProduct[];
+  cached: boolean;
+  updatedAt: string;
+  partial?: boolean;
+  failedAdvertisers?: { name: string; error: string }[];
+  warningCode?: 'NO_JOINED_ADVERTISERS';
+}
+
+export interface IngestDiscoverResponse {
+  productId: string;
+  contentId: string;
+  jobId: string;
 }
 
 export interface ConnectorStatus {

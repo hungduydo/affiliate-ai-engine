@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ExternalLink, Sparkles, Loader2, Star, ChevronRight,
-  Dna, FileText, AlertTriangle, ChevronDown, ChevronUp,
+  Dna, FileText, AlertTriangle, ChevronDown, ChevronUp, CheckCircle, XCircle,
 } from 'lucide-react';
 import { useProduct, useEnrichProduct, useEnrichmentJobStatus, useExtractProductDNA } from '../hooks/useProducts';
 import { StatusBadge } from '@shared/ui/StatusBadge';
@@ -20,7 +20,14 @@ export function ProductDetailPage() {
   const [dnaExpanded, setDnaExpanded] = useState(true);
   const [showDnaConfirm, setShowDnaConfirm] = useState(false);
 
-  useEnrichmentJobStatus(jobId);
+  const { data: enrichJob } = useEnrichmentJobStatus(jobId);
+
+  useEffect(() => {
+    if (enrichJob?.state === 'completed' || enrichJob?.state === 'failed') {
+      refetch();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enrichJob?.state]);
 
   if (isLoading) return <div className="text-zinc-500 text-sm py-8 text-center">Loading...</div>;
   if (isError || !product) return <div className="text-red-400 text-sm py-8 text-center">Product not found</div>;
@@ -102,6 +109,23 @@ export function ProductDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Enrichment job status */}
+        {jobId && enrichJob && (
+          <div className="flex items-center gap-2 text-xs rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2">
+            {enrichJob.state === 'completed' && <CheckCircle className="h-3.5 w-3.5 text-emerald-400 shrink-0" />}
+            {enrichJob.state === 'failed' && <XCircle className="h-3.5 w-3.5 text-red-400 shrink-0" />}
+            {(enrichJob.state === 'active' || enrichJob.state === 'waiting') && (
+              <Loader2 className="h-3.5 w-3.5 text-blue-400 animate-spin shrink-0" />
+            )}
+            <span className="text-zinc-400">
+              {enrichJob.state === 'completed' && 'Detail fetch complete — data refreshed'}
+              {enrichJob.state === 'failed' && `Fetch failed: ${enrichJob.failedReason ?? 'unknown error'}`}
+              {enrichJob.state === 'active' && 'Fetching product detail…'}
+              {enrichJob.state === 'waiting' && 'Queued…'}
+            </span>
+          </div>
+        )}
 
         {/* DNA Confirmation Dialog */}
         {showDnaConfirm && (
